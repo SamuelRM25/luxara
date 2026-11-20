@@ -38,6 +38,7 @@ Cada perfume tiene su propio enlace: `https://tudominio.com/p.php?s=SLUG` (ej. `
 | `IMAGES_STORAGE` | `disk` (Mac/Hostinger) o `db` (Render: guarda las fotos subidas dentro de MySQL) |
 | `TRUST_PROXY` | `1` en Render para registrar la IP real del cliente; `0` en tu Mac |
 | `APP_DEBUG` | `1` muestra errores detallados (solo pruebas) |
+| `SESSION_HOURS` | Horas sin actividad antes de cerrar la sesión del panel (por defecto 8) |
 
 ## Desplegar gratis en Render
 Render no tiene PHP nativo; el proyecto incluye un `Dockerfile` (PHP 8.3 + Apache) y un `render.yaml`.
@@ -51,7 +52,7 @@ Render no tiene PHP nativo; el proyecto incluye un `Dockerfile` (PHP 8.3 + Apach
 **Límites del plan gratis de Render**
 - Se “duerme” tras 15 minutos sin visitas; la primera visita después tarda ~1 minuto en despertar.
 - El disco se borra en cada reinicio o deploy. Por eso en Render se usa `IMAGES_STORAGE=db`: las fotos que subas desde el panel se guardan en MySQL. Las 26 fotos actuales viajan dentro del repositorio y no se pierden.
-- Las sesiones del panel se pierden cuando el servicio se duerme: solo vuelve a iniciar sesión.
+- Las sesiones del panel se guardan en MySQL, así que no se pierden cuando el servicio se duerme.
 
 ---
 
@@ -104,7 +105,7 @@ Hostinger → **Administrador de archivos** → entra a `public_html` del domini
 Hostinger → Seguridad → SSL → instalar (gratis). El `.htaccess` ya redirige todo a HTTPS.
 
 ### 4. Crear tu usuario administrador
-Entra a `https://tudominio.com/admin`. La primera vez el panel pide crear la cuenta del **administrador principal**. Después de eso esa pantalla desaparece y solo funciona el login.
+Entra a `https://tudominio.com/admin`. La primera vez el panel pide crear la cuenta del **administrador principal** (nombre, usuario y contraseña). Se inicia sesión con **usuario y contraseña**. Después de eso esa pantalla desaparece y solo funciona el login.
 
 ### 5. Configurar la tienda
 En el panel → **Ajustes**: número de WhatsApp, envío gratis desde, costo de envío, mensajes de la barra superior, métodos de pago y datos bancarios.

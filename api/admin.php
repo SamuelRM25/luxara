@@ -6,6 +6,7 @@
  */
 require __DIR__ . '/_lib.php';
 start_session();
+asegurar_columna_usuario();
 
 $r = $_GET['r'] ?? '';
 $m = $_SERVER['REQUEST_METHOD'];
@@ -16,17 +17,18 @@ switch ($r) {
     /* ---------- Acceso ---------- */
     case 'estado': {
         $needs = (int)val('SELECT COUNT(*) FROM usuarios') === 0;
-        $u = !empty($_SESSION['uid']) ? one('SELECT id, nombre, email, rol FROM usuarios WHERE id = ? AND activo = 1', [$_SESSION['uid']]) : null;
-        ok(['needs_setup' => $needs, 'user' => $u, 'csrf' => csrf_token()]);
+        $u = !empty($_SESSION['uid']) ? one('SELECT id, nombre, usuario, email, rol FROM usuarios WHERE id = ? AND activo = 1', [$_SESSION['uid']]) : null;
+        ok(['needs_setup' => $needs, 'user' => $u, 'csrf' => csrf_token(), 'session_hours' => session_horas()]);
     }
     case 'setup': {
         method('POST');
         if ((int)val('SELECT COUNT(*) FROM usuarios') > 0) fail('El administrador inicial ya fue creado', 403);
         $b = body();
-        $nombre = str($b['nombre'] ?? '', 120); $email = strtolower(str($b['email'] ?? '', 160)); $pass = (string)($b['password'] ?? '');
-        if (mb_strlen($nombre) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Nombre o correo no válido');
+        $nombre = str($b['nombre'] ?? '', 120); $usuario = limpiar_usuario($b['usuario'] ?? ''); $pass = (string)($b['password'] ?? '');
+        if (mb_strlen($nombre) < 2) fail('Escribe tu nombre');
+        if (strlen($usuario) < 3) fail('El usuario debe tener al menos 3 caracteres (letras, números, punto o guion)');
         if (strlen($pass) < 8) fail('La contraseña debe tener al menos 8 caracteres');
-        q("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (?,?,?,'admin')", [$nombre, $email, password_hash($pass, PASSWORD_DEFAULT)]);
+        q("INSERT INTO usuarios (nombre, usuario, password_hash, rol) VALUES (?,?,?,'admin')", [$nombre, $usuario, password_hash($pass, PASSWORD_DEFAULT)]);
         session_regenerate_id(true);
         $_SESSION['uid'] = (int)db()->lastInsertId();
         ok(['csrf' => csrf_token()]);
@@ -36,12 +38,12 @@ switch ($r) {
         $b = body();
         $fallos = (int)val('SELECT COUNT(*) FROM intentos_login WHERE ip = ? AND creado > NOW() - INTERVAL 15 MINUTE', [client_ip()]);
         if ($fallos >= 8) fail('Demasiados intentos. Espera 15 minutos.', 429);
-        $email = strtolower(str($b['email'] ?? '', 160));
-        $u = one('SELECT * FROM usuarios WHERE email = ? AND activo = 1', [$email]);
+        $login = strtolower(str($b['usuario'] ?? '', 160));
+        $u = one('SELECT * FROM usuarios WHERE (usuario = ? OR email = ?) AND activo = 1', [$login, $login]);
         if (!$u || !password_verify((string)($b['password'] ?? ''), $u['password_hash'])) {
-            q('INSERT INTO intentos_login (ip, email) VALUES (?,?)', [client_ip(), $email]);
+            q('INSERT INTO intentos_login (ip, email) VALUES (?,?)', [client_ip(), $login]);
             usleep(400000);
-            fail('Correo o contraseña incorrectos', 401);
+            fail('Usuario o contraseña incorrectos', 401);
         }
         if (password_needs_rehash($u['password_hash'], PASSWORD_DEFAULT))
             q('UPDATE usuarios SET password_hash = ? WHERE id = ?', [password_hash((string)$b['password'], PASSWORD_DEFAULT), $u['id']]);
@@ -50,7 +52,7 @@ switch ($r) {
         session_regenerate_id(true);
         $_SESSION['uid'] = (int)$u['id'];
         unset($_SESSION['csrf']);
-        ok(['user' => ['id' => (int)$u['id'], 'nombre' => $u['nombre'], 'email' => $u['email'], 'rol' => $u['rol']], 'csrf' => csrf_token()]);
+        ok(['user' => ['id' => (int)$u['id'], 'nombre' => $u['nombre'], 'usuario' => $u['usuario'], 'rol' => $u['rol']], 'csrf' => csrf_token()]);
     }
     case 'logout': {
         $_SESSION = []; session_destroy(); ok();
@@ -469,21 +471,26 @@ case 'ajustes_guardar': {
 }
 
 /* ---------- Usuarios ---------- */
-case 'usuarios': require_admin(true); ok(['usuarios' => all('SELECT id, nombre, email, rol, activo, ultimo_acceso, creado FROM usuarios ORDER BY id')]);
+case 'usuarios': require_admin(true); ok(['usuarios' => all('SELECT id, nombre, usuario, email, rol, activo, ultimo_acceso, creado FROM usuarios ORDER BY id')]);
 case 'usuario_guardar': {
     method('POST'); require_admin(true);
     $b = body(); $id = int_($b['id'] ?? 0);
-    $nombre = str($b['nombre'] ?? '', 120); $email = strtolower(str($b['email'] ?? '', 160)); $pass = (string)($b['password'] ?? '');
+    $nombre = str($b['nombre'] ?? '', 120); $usuario = limpiar_usuario($b['usuario'] ?? ''); $pass = (string)($b['password'] ?? '');
+    $email = strtolower(str($b['email'] ?? '', 160)) ?: null;
     $rol = ($b['rol'] ?? '') === 'vendedor' ? 'vendedor' : 'admin'; $activo = bool_($b['activo'] ?? 1);
-    if (mb_strlen($nombre) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Nombre o correo no válido');
-    if (val('SELECT 1 FROM usuarios WHERE email = ? AND id <> ?', [$email, $id])) fail('Ese correo ya está registrado');
+    if (mb_strlen($nombre) < 2) fail('Escribe el nombre');
+    if (strlen($usuario) < 3) fail('El usuario debe tener al menos 3 caracteres (letras, números, punto o guion)');
+    if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Correo no válido');
+    if (val('SELECT 1 FROM usuarios WHERE usuario = ? AND id <> ?', [$usuario, $id])) fail('Ese usuario ya existe');
+    if ($email && val('SELECT 1 FROM usuarios WHERE email = ? AND id <> ?', [$email, $id])) fail('Ese correo ya está registrado');
     if ($id === (int)$U['id'] && (!$activo || $rol !== 'admin')) fail('No puedes desactivarte ni quitarte el rol de administrador');
     if ($id) {
-        q('UPDATE usuarios SET nombre=?, email=?, rol=?, activo=? WHERE id=?', [$nombre, $email, $rol, $activo, $id]);
+        q('UPDATE usuarios SET nombre=?, usuario=?, email=?, rol=?, activo=? WHERE id=?', [$nombre, $usuario, $email, $rol, $activo, $id]);
         if ($pass !== '') { if (strlen($pass) < 8) fail('La contraseña debe tener al menos 8 caracteres'); q('UPDATE usuarios SET password_hash=? WHERE id=?', [password_hash($pass, PASSWORD_DEFAULT), $id]); }
+        if (!$activo) q("DELETE FROM sesiones WHERE data LIKE ?", ['%uid|i:' . $id . ';%']);
     } else {
         if (strlen($pass) < 8) fail('La contraseña debe tener al menos 8 caracteres');
-        q('INSERT INTO usuarios (nombre, email, password_hash, rol, activo) VALUES (?,?,?,?,?)', [$nombre, $email, password_hash($pass, PASSWORD_DEFAULT), $rol, $activo]);
+        q('INSERT INTO usuarios (nombre, usuario, email, password_hash, rol, activo) VALUES (?,?,?,?,?,?)', [$nombre, $usuario, $email, password_hash($pass, PASSWORD_DEFAULT), $rol, $activo]);
     }
     ok();
 }

@@ -214,7 +214,7 @@ select.f{appearance:none;-webkit-appearance:none;padding-right:30px;background-i
     <h1 id="lgTitle">Panel Luxara</h1>
     <p id="lgSub">Ingresa con tu cuenta de administrador</p>
     <div class="fld hidden" id="lgNameF"><label>Tu nombre</label><input class="f" name="nombre" autocomplete="name"></div>
-    <div class="fld"><label>Correo</label><input class="f" name="email" type="email" autocomplete="username" required></div>
+    <div class="fld"><label>Usuario</label><input class="f" name="usuario" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></div>
     <div class="fld"><label>Contraseña</label><input class="f" name="password" type="password" autocomplete="current-password" required minlength="8"></div>
     <div class="err" id="lgErr"></div>
     <button class="btn btn-gold" style="width:100%;padding:13px" id="lgBtn">Entrar</button>
@@ -229,6 +229,7 @@ select.f{appearance:none;-webkit-appearance:none;padding-right:30px;background-i
     <div class="foot"><b id="uName"></b><small id="uRole"></small>
       <div class="row"><button onclick="openPwd()">Mi contraseña</button><button onclick="logout()">Salir</button></div>
       <div class="row"><a href="../" target="_blank" style="color:var(--gold);font-size:12.5px">Ver tienda ↗</a></div>
+      <small id="sessNote" style="display:block;margin-top:8px;font-size:11px"></small>
     </div>
   </aside>
   <main class="main" id="main"></main>
@@ -242,7 +243,7 @@ select.f{appearance:none;-webkit-appearance:none;padding-right:30px;background-i
 <script>
 /* ================== utilidades ================== */
 const API = '../api/admin.php';
-let CSRF = '', ME = null, VIEW = 'dashboard', CACHE = {};
+let SESS = 8, CSRF = '', ME = null, VIEW = 'dashboard', CACHE = {};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const Q = n => 'Q' + Number(n || 0).toLocaleString('es-GT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -297,7 +298,7 @@ let SETUP = false;
 async function boot() {
   try {
     const d = await api('estado');
-    CSRF = d.csrf; SETUP = d.needs_setup;
+    CSRF = d.csrf; SETUP = d.needs_setup; SESS = d.session_hours;
     if (d.user) { ME = d.user; showApp(); } else showLogin();
   } catch (e) {
     showLogin(); $('#lgErr').textContent = e.message + '. Revisa config/config.php y que la base de datos tenga las tablas.';
@@ -307,6 +308,7 @@ function showLogin() {
   $('#vApp').classList.add('hidden'); $('#vLogin').classList.remove('hidden'); closeAll();
   $('#lgNameF').classList.toggle('hidden', !SETUP);
   $('#lgTitle').textContent = SETUP ? 'Bienvenido a Luxara' : 'Panel Luxara';
+  $('#loginForm [name=usuario]').placeholder = SETUP ? 'ej. oscar (letras y números)' : '';
   $('#lgSub').textContent = SETUP ? 'Crea la cuenta del administrador principal' : 'Ingresa con tu cuenta de administrador';
   $('#lgBtn').textContent = SETUP ? 'Crear administrador' : 'Entrar';
 }
@@ -314,7 +316,7 @@ $('#loginForm').onsubmit = async e => {
   e.preventDefault(); $('#lgErr').textContent = ''; $('#lgBtn').disabled = true;
   try {
     await api(SETUP ? 'setup' : 'login', {method: 'POST', body: formData(e.target)});
-    const st = await api('estado'); ME = st.user; CSRF = st.csrf; SETUP = false; e.target.reset(); showApp();
+    const st = await api('estado'); ME = st.user; CSRF = st.csrf; SESS = st.session_hours; SETUP = false; e.target.reset(); showApp();
   } catch (err) { $('#lgErr').textContent = err.message; }
   finally { $('#lgBtn').disabled = false; }
 };
@@ -345,7 +347,8 @@ const VIEWS = [
 ];
 function showApp() {
   $('#vLogin').classList.add('hidden'); $('#vApp').classList.remove('hidden');
-  $('#uName').textContent = ME.nombre; $('#uRole').textContent = (ME.rol === 'admin' ? 'Administrador' : 'Vendedor') + ' · ' + ME.email;
+  $('#uName').textContent = ME.nombre; $('#uRole').textContent = (ME.rol === 'admin' ? 'Administrador' : 'Vendedor') + ' · ' + ME.usuario;
+  $('#sessNote').textContent = `La sesión se cierra tras ${SESS} h sin actividad`;
   renderNav(); go(location.hash.slice(1) || 'dashboard');
 }
 function renderNav(pend) {
@@ -755,15 +758,16 @@ async function v_ajustes() {
 async function v_usuarios() {
   M().innerHTML = header('Usuarios', 'Quién puede entrar al panel', `<button class="btn btn-gold" onclick="editUser()">+ Nuevo usuario</button>`) + `<div class="card"><div class="tw" id="uT"><div class="empty">Cargando…</div></div></div>`;
   const {usuarios} = await api('usuarios'); CACHE.users = usuarios;
-  $('#uT').innerHTML = `<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Último acceso</th><th>Estado</th></tr></thead><tbody>
-  ${usuarios.map(u => `<tr class="click" onclick="editUser(${u.id})"><td>${esc(u.nombre)}</td><td>${esc(u.email)}</td><td>${u.rol === 'admin' ? 'Administrador' : 'Vendedor'}</td><td><small style="color:var(--mute)">${fdate(u.ultimo_acceso)}</small></td><td>${+u.activo ? '<span class="pill st-on">Activo</span>' : '<span class="pill st-off">Inactivo</span>'}</td></tr>`).join('')}</tbody></table>
+  $('#uT').innerHTML = `<table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Último acceso</th><th>Estado</th></tr></thead><tbody>
+  ${usuarios.map(u => `<tr class="click" onclick="editUser(${u.id})"><td>${esc(u.nombre)}${u.email ? `<small>${esc(u.email)}</small>` : ''}</td><td><span class="mono">${esc(u.usuario)}</span></td><td>${u.rol === 'admin' ? 'Administrador' : 'Vendedor'}</td><td><small style="color:var(--mute)">${fdate(u.ultimo_acceso)}</small></td><td>${+u.activo ? '<span class="pill st-on">Activo</span>' : '<span class="pill st-off">Inactivo</span>'}</td></tr>`).join('')}</tbody></table>
   <div class="pad" style="font-size:12.5px;color:var(--dim)"><b style="color:var(--mute)">Administrador:</b> acceso total. <b style="color:var(--mute)">Vendedor:</b> pedidos, perfumes, inventario, cupones y promociones (sin ajustes ni usuarios).</div>`;
 }
 function editUser(id) {
   const u = id ? CACHE.users.find(x => +x.id === +id) : {rol: 'vendedor', activo: 1};
   openModal(`${mHead(id ? 'Editar usuario' : 'Nuevo usuario')}<form id="uF"><div class="mb">
     <div class="fld"><label>Nombre *</label><input class="f" name="nombre" value="${esc(u.nombre || '')}" required></div>
-    <div class="fld"><label>Correo *</label><input class="f" type="email" name="email" value="${esc(u.email || '')}" required></div>
+    <div class="fld"><label>Usuario *</label><input class="f" name="usuario" value="${esc(u.usuario || '')}" autocapitalize="none" required><span class="hint">Con este nombre inicia sesión. Letras, números, punto o guion.</span></div>
+    <div class="fld"><label>Correo (opcional)</label><input class="f" type="email" name="email" value="${esc(u.email || '')}"></div>
     <div class="fld"><label>${id ? 'Nueva contraseña (vacío = no cambiar)' : 'Contraseña *'}</label><input class="f" type="password" name="password" ${id ? '' : 'required'} minlength="8" autocomplete="new-password"></div>
     <div class="fld"><label>Rol</label><select class="f" name="rol"><option value="vendedor" ${u.rol === 'vendedor' ? 'selected' : ''}>Vendedor</option><option value="admin" ${u.rol === 'admin' ? 'selected' : ''}>Administrador</option></select></div>
     <label class="chk"><input type="checkbox" name="activo" ${+u.activo ? 'checked' : ''}> Activo</label>

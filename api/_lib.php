@@ -188,16 +188,51 @@ function costo_envio(float $subtotal, bool $gratis): float {
 }
 
 /* ---------------- Sesión admin ---------------- */
+/** Sesiones guardadas en MySQL: sobreviven a reinicios de Render y a varios servidores */
+final class DbSessionHandler implements SessionHandlerInterface {
+    public function open($path, $name): bool { return true; }
+    public function close(): bool { return true; }
+    public function read($id): string|false {
+        $r = one('SELECT data FROM sesiones WHERE id = ? AND actualizado > ?', [$id, time() - session_horas() * 3600]);
+        return $r['data'] ?? '';
+    }
+    public function write($id, $data): bool {
+        q('INSERT INTO sesiones (id, data, actualizado) VALUES (?,?,?) ON DUPLICATE KEY UPDATE data = VALUES(data), actualizado = VALUES(actualizado)', [$id, $data, time()]);
+        return true;
+    }
+    public function destroy($id): bool { q('DELETE FROM sesiones WHERE id = ?', [$id]); return true; }
+    public function gc($max): int|false { return q('DELETE FROM sesiones WHERE actualizado < ?', [time() - session_horas() * 3600])->rowCount(); }
+}
+function session_horas(): int { global $CFG; return max(1, (int)($CFG['session_hours'] ?? 8)); }
+
 function start_session(): void {
     if (session_status() === PHP_SESSION_ACTIVE) return;
+    q("CREATE TABLE IF NOT EXISTS sesiones (id VARCHAR(128) PRIMARY KEY, data MEDIUMTEXT NOT NULL, actualizado INT UNSIGNED NOT NULL, INDEX (actualizado)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    session_set_save_handler(new DbSessionHandler(), true);
+    ini_set('session.gc_probability', '1'); ini_set('session.gc_divisor', '50');
+    ini_set('session.use_strict_mode', '1');
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
     session_name('LUXADMIN');
-    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Strict']);
+    session_set_cookie_params(['lifetime' => session_horas() * 3600, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Strict']);
     session_start();
-    // expira tras 8 horas de inactividad
-    if (isset($_SESSION['t']) && time() - $_SESSION['t'] > 8 * 3600) { $_SESSION = []; session_destroy(); session_start(); }
+    // Se cierra tras SESSION_HOURS horas sin actividad (por defecto 8)
+    if (isset($_SESSION['t']) && time() - $_SESSION['t'] > session_horas() * 3600) { $_SESSION = []; session_regenerate_id(true); }
     $_SESSION['t'] = time();
 }
+/** Agrega la columna "usuario" a bases creadas antes de este cambio */
+function asegurar_columna_usuario(): void {
+    static $hecho = false; if ($hecho) return; $hecho = true;
+    if (one("SHOW COLUMNS FROM usuarios LIKE 'usuario'")) return;
+    q("ALTER TABLE usuarios ADD COLUMN usuario VARCHAR(50) NULL AFTER nombre, MODIFY email VARCHAR(160) NULL");
+    foreach (all('SELECT id, email FROM usuarios') as $u) {
+        $base = preg_replace('/[^a-z0-9._-]/', '', strtolower(strstr((string)$u['email'], '@', true) ?: 'admin' . $u['id'])) ?: 'admin' . $u['id'];
+        $cand = $base; $n = 2;
+        while (val('SELECT 1 FROM usuarios WHERE usuario = ?', [$cand])) $cand = $base . $n++;
+        q('UPDATE usuarios SET usuario = ? WHERE id = ?', [$cand, $u['id']]);
+    }
+    q('ALTER TABLE usuarios MODIFY usuario VARCHAR(50) NOT NULL, ADD UNIQUE KEY usuario (usuario)');
+}
+function limpiar_usuario($v): string { return preg_replace('/[^a-z0-9._-]/', '', strtolower(trim((string)$v))); }
 function csrf_token(): string {
     if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(32));
     return $_SESSION['csrf'];
@@ -209,7 +244,7 @@ function require_admin(bool $soloAdmin = false): array {
         $t = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
         if (!hash_equals($_SESSION['csrf'] ?? '', $t)) fail('Token de seguridad inválido. Recarga la página.', 419);
     }
-    $u = one('SELECT id, nombre, email, rol FROM usuarios WHERE id = ? AND activo = 1', [$_SESSION['uid']]);
+    $u = one('SELECT id, nombre, usuario, email, rol FROM usuarios WHERE id = ? AND activo = 1', [$_SESSION['uid']]);
     if (!$u) { $_SESSION = []; fail('Usuario no autorizado', 401); }
     if ($soloAdmin && $u['rol'] !== 'admin') fail('Solo un administrador puede hacer esto', 403);
     return $u;

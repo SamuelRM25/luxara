@@ -41,5 +41,7 @@ return [
     // disk = guarda las fotos en uploads/ · db = las guarda en MySQL (usar en Render: su disco se borra)
     'images'       => $env('IMAGES_STORAGE', 'disk') === 'db' ? 'db' : 'disk',
     'cors_origins' => array_filter(array_map('trim', explode(',', (string)$env('CORS_ORIGINS', '')))),
+    // Horas sin actividad antes de cerrar la sesión del panel
+    'session_hours' => (int)$env('SESSION_HOURS', 8),
     'max_upload'   => 3 * 1024 * 1024,
 ];

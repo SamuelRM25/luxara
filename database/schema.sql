@@ -8,12 +8,20 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE IF NOT EXISTS usuarios (
   id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre          VARCHAR(120) NOT NULL,
-  email           VARCHAR(160) NOT NULL UNIQUE,
+  usuario         VARCHAR(50) NOT NULL UNIQUE,
+  email           VARCHAR(160) NULL UNIQUE,
   password_hash   VARCHAR(255) NOT NULL,
   rol             ENUM('admin','vendedor') NOT NULL DEFAULT 'admin',
   activo          TINYINT(1) NOT NULL DEFAULT 1,
   ultimo_acceso   DATETIME NULL,
   creado          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sesiones (
+  id           VARCHAR(128) PRIMARY KEY,
+  data         MEDIUMTEXT NOT NULL,
+  actualizado  INT UNSIGNED NOT NULL,
+  INDEX (actualizado)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS intentos_login (
