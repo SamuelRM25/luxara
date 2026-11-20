@@ -252,7 +252,7 @@ case 'producto_guardar': {
         'orden' => int_($b['orden'] ?? 0),
     ];
     if (mb_strlen($f['nombre']) < 2) fail('El nombre es obligatorio');
-    if ($f['imagen'] && !preg_match('#^(uploads/productos/[\w.-]+|https://[^\s"\'<>]+)$#', $f['imagen'])) fail('Ruta de imagen no válida');
+    if ($f['imagen'] && !preg_match('#^(uploads/productos/[\w.-]+|api/img\.php\?id=\d+|https://[^\s"\'<>]+)$#', $f['imagen'])) fail('Ruta de imagen no válida');
     $variantes = $b['variantes'] ?? [];
     if (!is_array($variantes) || !$variantes) fail('Agrega al menos una presentación (tamaño y precio)');
     foreach ($variantes as $v) {
@@ -263,7 +263,8 @@ case 'producto_guardar': {
     $pdo = db(); $pdo->beginTransaction();
     try {
         if ($id) {
-            one('SELECT id FROM productos WHERE id = ?', [$id]) ?? fail('Producto no encontrado', 404);
+            $prev = one('SELECT id, imagen FROM productos WHERE id = ?', [$id]) ?? fail('Producto no encontrado', 404);
+            if ($prev['imagen'] && $prev['imagen'] !== $f['imagen'] && !val('SELECT 1 FROM productos WHERE imagen = ? AND id <> ?', [$prev['imagen'], $id])) borrar_imagen($prev['imagen']);
             $sets = implode(', ', array_map(fn($k) => "$k = ?", array_keys($f)));
             q("UPDATE productos SET $sets WHERE id = ?", [...array_values($f), $id]);
         } else {
@@ -311,7 +312,7 @@ case 'producto_eliminar': {
     }
     $img = val('SELECT imagen FROM productos WHERE id = ?', [$id]);
     q('DELETE FROM productos WHERE id = ?', [$id]);
-    if ($img && str_starts_with($img, 'uploads/productos/')) @unlink(__DIR__ . '/../' . $img);
+    borrar_imagen($img);
     ok(['mensaje' => 'Producto eliminado']);
 }
 case 'subir_imagen': {
@@ -323,23 +324,29 @@ case 'subir_imagen': {
     $info = @getimagesize($f['tmp_name']);
     $ext = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'][$info[2] ?? 0] ?? null;
     if (!$ext) fail('Formato no permitido. Usa JPG, PNG o WEBP.');
-    $dir = __DIR__ . '/../uploads/productos/';
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    $name = date('Ymd') . '-' . bin2hex(random_bytes(6));
-    // Reescala a máx. 1200 px y guarda en WEBP si GD lo permite (más liviano)
+    // Reescala a máx. 1200 px y convierte a WEBP (más liviano)
+    $bin = null; $mime = $info['mime'];
     if (function_exists('imagecreatefromstring') && function_exists('imagewebp')) {
-        $src = imagecreatefromstring(file_get_contents($f['tmp_name']));
+        $src = @imagecreatefromstring(file_get_contents($f['tmp_name']));
         if ($src) {
             [$w, $h] = [imagesx($src), imagesy($src)]; $s = min(1, 1200 / max($w, $h));
             $dst = imagecreatetruecolor((int)($w * $s), (int)($h * $s));
             imagealphablending($dst, false); imagesavealpha($dst, true);
             imagecopyresampled($dst, $src, 0, 0, 0, 0, (int)($w * $s), (int)($h * $s), $w, $h);
-            imagewebp($dst, $dir . $name . '.webp', 85);
-            ok(['ruta' => 'uploads/productos/' . $name . '.webp']);
+            ob_start(); imagewebp($dst, null, 82); $bin = ob_get_clean(); $mime = 'image/webp'; $ext = 'webp';
         }
     }
-    move_uploaded_file($f['tmp_name'], $dir . $name . '.' . $ext) || fail('No se pudo guardar la imagen', 500);
-    ok(['ruta' => 'uploads/productos/' . $name . '.' . $ext]);
+    if ($bin === null) $bin = file_get_contents($f['tmp_name']);
+    if ($CFG['images'] === 'db') {
+        asegurar_tabla_imagenes();
+        q('INSERT INTO imagenes (mime, datos, bytes) VALUES (?,?,?)', [$mime, $bin, strlen($bin)]);
+        ok(['ruta' => 'api/img.php?id=' . db()->lastInsertId()]);
+    }
+    $dir = __DIR__ . '/../uploads/productos/';
+    if (!is_dir($dir)) mkdir($dir, 0755, true);
+    $name = date('Ymd') . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
+    file_put_contents($dir . $name, $bin) || fail('No se pudo guardar la imagen', 500);
+    ok(['ruta' => 'uploads/productos/' . $name]);
 }
 
 /* ---------- Inventario ---------- */

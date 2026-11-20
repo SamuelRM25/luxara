@@ -21,6 +21,32 @@ GitHub/luxara/
 
 Para Hostinger: sube todo **menos** `instalar.php` y `database/` (la base ya queda lista desde tu Mac porque es la misma de Clever Cloud).
 
+## Credenciales (.env)
+`config/config.php` ya **no tiene contraseñas**: lee todo de variables de entorno.
+- **En tu Mac:** el archivo `.env` (en la raíz) tiene tus datos de Clever Cloud. Está en `.gitignore`, nunca se sube a GitHub. Plantilla: `.env.example`.
+- **En Render:** las mismas variables se agregan en el panel del servicio (Environment).
+
+| Variable | Qué es |
+|---|---|
+| `MYSQL_ADDON_HOST`, `MYSQL_ADDON_PORT`, `MYSQL_ADDON_DB`, `MYSQL_ADDON_USER`, `MYSQL_ADDON_PASSWORD` | Datos de Clever Cloud (se pegan tal cual) |
+| `IMAGES_STORAGE` | `disk` (Mac/Hostinger) o `db` (Render: guarda las fotos subidas dentro de MySQL) |
+| `TRUST_PROXY` | `1` en Render para registrar la IP real del cliente; `0` en tu Mac |
+| `APP_DEBUG` | `1` muestra errores detallados (solo pruebas) |
+
+## Desplegar gratis en Render
+Render no tiene PHP nativo; el proyecto incluye un `Dockerfile` (PHP 8.3 + Apache) y un `render.yaml`.
+
+1. Sube el repositorio a GitHub (sin `.env`).
+2. En render.com → **New → Blueprint** → elige el repo `luxara`. Render lee `render.yaml` y te pide las 4 variables de Clever Cloud (host, base, usuario, contraseña). Pégalas desde tu `.env`.
+   *(También sirve **New → Web Service → Docker → Free** y agregar las variables a mano.)*
+3. Espera el primer build (3–5 min). Tu tienda queda en `https://luxara.onrender.com` (o similar) y el panel en `/admin/`.
+4. La base de datos es la misma de Clever Cloud que ya llenaste con `instalar.php` desde tu Mac, así que no hay que instalar nada en Render.
+
+**Límites del plan gratis de Render**
+- Se “duerme” tras 15 minutos sin visitas; la primera visita después tarda ~1 minuto en despertar.
+- El disco se borra en cada reinicio o deploy. Por eso en Render se usa `IMAGES_STORAGE=db`: las fotos que subas desde el panel se guardan en MySQL. Las 26 fotos actuales viajan dentro del repositorio y no se pierden.
+- Las sesiones del panel se pierden cuando el servicio se duerme: solo vuelve a iniciar sesión.
+
 ---
 
 ## Estructura
@@ -44,8 +70,7 @@ Luxara/
     │   ├── tienda.php    ← API pública: catálogo, cupón, crear pedido
     │   └── admin.php     ← API del panel (requiere sesión + token CSRF)
     ├── config/
-    │   ├── config.php    ← CREDENCIALES (bloqueado al público)
-    │   └── config.example.php
+    │   └── config.php    ← lee las credenciales del .env / variables de entorno
     └── uploads/productos/← fotos que subes desde el panel
 ```
 
@@ -124,9 +149,9 @@ Las 26 fotos de publicidad (carpetas dama, caballero y unisex) ya están asignad
 - Rose Petals tiene costo Q0 en el Excel: corrígelo en Perfumes si no fue regalo, para que la ganancia salga bien.
 - El historial de ventas incluye perfumes que ya no están en inventario (Nitro Red, 9AM, Khamrah, World Cup…): aparecen en reportes pero no en la tienda.
 - En **Ajustes** pon el número de WhatsApp de la tienda (viene uno de ejemplo).
-- **Cambia la contraseña de la base de datos** en Clever Cloud (se compartió en un chat) y actualízala en `config/config.php`.
+- **Cambia la contraseña de la base de datos** en Clever Cloud (se compartió en un chat) y actualízala en tu `.env` y en Render.
 - El plan gratuito de Clever Cloud tiene límites bajos de conexiones simultáneas y de espacio. Hostinger incluye bases MySQL en sus planes; si migras, solo cambias los datos en `config/config.php` e importas `schema.sql`.
-- Pon `'debug' => false` en producción (ya viene así).
+- Deja `APP_DEBUG=0` en producción.
 - Si abres `index.html` sin servidor, la tienda entra en **modo demostración** con productos de ejemplo y no guarda pedidos.
 
 ## Probar en tu Mac

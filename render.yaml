@@ -1,0 +1,30 @@
+# Blueprint de Render: crea el servicio web gratis con Docker.
+# Las variables con sync:false las pide Render al crear el servicio (no se guardan en GitHub).
+services:
+  - type: web
+    name: luxara
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /index.html
+    autoDeploy: true
+    envVars:
+      - key: MYSQL_ADDON_HOST
+        sync: false
+      - key: MYSQL_ADDON_PORT
+        value: "3306"
+      - key: MYSQL_ADDON_DB
+        sync: false
+      - key: MYSQL_ADDON_USER
+        sync: false
+      - key: MYSQL_ADDON_PASSWORD
+        sync: false
+      - key: TRUST_PROXY
+        value: "1"
+      - key: IMAGES_STORAGE
+        value: db
+      - key: APP_DEBUG
+        value: "0"
+      - key: APP_TIMEZONE
+        value: America/Guatemala

@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+.DS_Store
+database
+instalar.php
+README.md
+render.yaml
+Dockerfile

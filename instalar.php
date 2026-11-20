@@ -37,6 +37,7 @@ if ($pdo && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!columna($pdo, 'pedidos', 'canal')) { ejecutar($pdo, "$DIR/migracion_v2.sql", $log); }
                 else $log[] = 'Las tablas ya existen y están actualizadas. No se cambió nada.';
             } else ejecutar($pdo, "$DIR/schema.sql", $log);
+            $pdo->exec("CREATE TABLE IF NOT EXISTS imagenes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, mime VARCHAR(40) NOT NULL, datos MEDIUMBLOB NOT NULL, bytes INT UNSIGNED NOT NULL, creado DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         } elseif ($acc === 'productos') {
             ejecutar($pdo, "$DIR/productos_luxara.sql", $log);
         } elseif ($acc === 'historial') {

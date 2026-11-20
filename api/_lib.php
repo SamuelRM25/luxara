@@ -97,7 +97,30 @@ function slugify(string $s): string {
     $s = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $s));
     return trim($s, '-') ?: 'producto';
 }
-function client_ip(): string { return substr($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0', 0, 45); }
+function client_ip(): string {
+    global $CFG;
+    // Detrás de Render/Cloudflare la IP real viene en X-Forwarded-For (la primera de la lista)
+    if (!empty($CFG['trust_proxy']) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
+        if (filter_var($ip, FILTER_VALIDATE_IP)) return substr($ip, 0, 45);
+    }
+    return substr($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0', 0, 45);
+}
+/** Tabla para fotos guardadas en MySQL (IMAGES_STORAGE=db) */
+function asegurar_tabla_imagenes(): void {
+    q("CREATE TABLE IF NOT EXISTS imagenes (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        mime VARCHAR(40) NOT NULL,
+        datos MEDIUMBLOB NOT NULL,
+        bytes INT UNSIGNED NOT NULL,
+        creado DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+function borrar_imagen(?string $ruta): void {
+    if (!$ruta) return;
+    if (preg_match('#^api/img\.php\?id=(\d+)$#', $ruta, $m)) { try { q('DELETE FROM imagenes WHERE id = ?', [(int)$m[1]]); } catch (Throwable $e) {} }
+    elseif (str_starts_with($ruta, 'uploads/productos/') && !str_contains($ruta, '..')) @unlink(__DIR__ . '/../' . $ruta);
+}
 
 /* ---------------- Ajustes ---------------- */
 function ajustes(): array {
