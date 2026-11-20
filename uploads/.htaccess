@@ -1,0 +1,6 @@
+# Solo imágenes: nunca ejecutar scripts aquí
+Options -Indexes
+<FilesMatch "\.(php|phtml|phar|pl|py|cgi|sh|html?)$">
+  Require all denied
+</FilesMatch>
+php_flag engine off

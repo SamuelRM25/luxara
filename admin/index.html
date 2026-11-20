@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Luxara · Panel de administración</title>
+<link rel="icon" href="../assets/mono.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0908;--bg2:#100e0c;--card:#15120f;--line:#28221b;--line2:#3a3127;--gold:#d4ac62;--gold2:#f1d48f;--gold3:#a67c37;--ink:#f1eadd;--mute:#a59b8b;--dim:#6e6559;
+--green:#7fbf8a;--red:#e07a6a;--blue:#7aa8e0;--amber:#e0b45a;--violet:#b28be0;--grad:linear-gradient(135deg,#a67c37,#f1d48f 45%,#c99a4b 70%,#f6dc9c);
+--serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:300;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.15}
+.hidden{display:none!important}
+
+/* layout */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.side{background:var(--bg2);border-right:1px solid var(--line);padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.logo{display:flex;align-items:center;gap:10px;padding:0 10px 22px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.logo img{height:34px}
+.logo b{font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:.12em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo small{display:block;font-size:9.5px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase}
+.nav{display:grid;gap:2px}
+.nav button{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:var(--mute);text-align:left;transition:.15s;font-size:14px;width:100%}
+.nav button svg{width:18px;height:18px;flex:none}
+.nav button:hover{background:#1a1612;color:var(--ink)}
+.nav button.on{background:rgba(212,172,98,.1);color:var(--gold2)}
+.nav .cnt{margin-left:auto;background:var(--grad);color:#1a1307;font-size:11px;font-weight:600;border-radius:10px;padding:0 7px;min-width:20px;text-align:center}
+.side .foot{margin-top:auto;border-top:1px solid var(--line);padding:14px 10px 0;font-size:13px}
+.side .foot b{display:block;font-weight:500}
+.side .foot small{color:var(--dim)}
+.side .foot .row{display:flex;gap:12px;margin-top:10px}
+.side .foot .row button{color:var(--mute);font-size:12.5px;text-decoration:underline;text-underline-offset:3px}
+.side .foot .row button:hover{color:var(--gold2)}
+.main{padding:28px 34px 60px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.top h1{font-size:34px}
+.top p{color:var(--dim);font-size:13px}
+.top .acts{display:flex;gap:10px;flex-wrap:wrap}
+.mob{display:none}
+
+/* ui */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:5px;font-size:13px;font-weight:500;letter-spacing:.03em;transition:.15s;white-space:nowrap}
+.btn svg{width:16px;height:16px}
+.btn-gold{background:var(--grad);color:#1a1307}
+.btn-gold:hover{filter:brightness(1.08)}
+.btn-line{border:1px solid var(--line2)}
+.btn-line:hover{border-color:var(--gold3);color:var(--gold2)}
+.btn-red{border:1px solid rgba(224,122,106,.4);color:var(--red)}
+.btn-red:hover{background:rgba(224,122,106,.1)}
+.btn-sm{padding:6px 11px;font-size:12px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px}
+.pad{padding:20px}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+.kpi{padding:18px 20px}
+.kpi span{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.kpi b{display:block;font-family:var(--serif);font-size:32px;font-weight:500;color:var(--gold2);margin:4px 0 2px}
+.kpi small{color:var(--mute);font-size:12.5px}
+.kpi small.up{color:var(--green)}.kpi small.down{color:var(--red)}
+.card h3{font-size:20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.card h3 small{font-family:var(--sans);font-size:12px;color:var(--dim);font-weight:300}
+.chart{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:10px}
+.chart div{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.chart i{width:100%;max-width:30px;background:var(--grad);border-radius:3px 3px 0 0;min-height:2px;position:relative;transition:.3s}
+.chart i:hover::after{content:attr(data-t);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#000;border:1px solid var(--line2);padding:4px 8px;border-radius:4px;font-style:normal;font-size:11px;white-space:nowrap;color:var(--ink)}
+.chart small{font-size:10px;color:var(--dim)}
+.bars{display:grid;gap:10px}
+.bars .r{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px}
+.bars .r .b{grid-column:1/-1;height:5px;background:#221d17;border-radius:3px;overflow:hidden}
+.bars .r .b i{display:block;height:100%;background:var(--grad)}
+.list .it{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;gap:10px}
+.list .it:last-child{border:0}
+.list .it small{color:var(--dim);display:block}
+.empty{color:var(--dim);text-align:center;padding:30px 10px;font-size:13.5px}
+
+/* table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:500;text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr{transition:.12s}
+tbody tr.click{cursor:pointer}
+tbody tr:hover{background:#1a1612}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td small{display:block;color:var(--dim);font-size:12px}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;letter-spacing:.04em;color:var(--gold2)}
+.pill{display:inline-block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.st-pendiente{background:rgba(224,180,90,.14);color:var(--amber)}
+.st-confirmado{background:rgba(122,168,224,.14);color:var(--blue)}
+.st-enviado{background:rgba(178,139,224,.14);color:var(--violet)}
+.st-entregado{background:rgba(127,191,138,.14);color:var(--green)}
+.st-cancelado{background:rgba(224,122,106,.12);color:var(--red)}
+.st-on{background:rgba(127,191,138,.14);color:var(--green)}
+.st-off{background:#221d17;color:var(--dim)}
+.st-low{background:rgba(224,180,90,.14);color:var(--amber)}
+.st-out{background:rgba(224,122,106,.12);color:var(--red)}
+
+/* filters */
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.tabs button{padding:10px 14px;color:var(--mute);border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13.5px}
+.tabs button.on{color:var(--gold2);border-color:var(--gold)}
+.tabs button em{font-style:normal;font-size:11px;color:var(--dim);margin-left:4px}
+input.f,select.f,textarea.f{background:var(--bg);border:1px solid var(--line2);border-radius:5px;padding:9px 12px;font-size:13.5px;outline:none;transition:.15s;width:100%}
+input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--gold)}
+.filters input.f,.filters select.f{width:auto}
+.filters .search{min-width:240px;flex:1;max-width:340px}
+select.f{appearance:none;-webkit-appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d4ac62' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:14px;font-size:13px;color:var(--dim)}
+
+/* forms */
+.fld{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fld label{font-size:12px;color:var(--mute)}
+.fld .hint{font-size:11.5px;color:var(--dim)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:0 14px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--gold);width:16px;height:16px}
+.sec{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:8px 0 14px;padding-top:14px;border-top:1px solid var(--line)}
+.sec:first-child{border:0;padding-top:0;margin-top:0}
+.vt{width:100%;border-collapse:collapse;margin-bottom:10px}
+.vt th{padding:6px 6px;font-size:10px}
+.vt td{padding:4px 4px;border:0}
+.vt input.f{padding:8px 9px}
+.img-up{display:flex;gap:16px;align-items:center}
+.img-up .pv{width:110px;height:130px;border:1px dashed var(--line2);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0d0b0a;flex:none}
+.img-up .pv img{width:100%;height:100%;object-fit:cover}
+.thumb{width:44px;height:52px;border-radius:4px;background:#0d0b0a;border:1px solid var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;flex:none}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb svg{height:80%}
+.pc{display:flex;gap:12px;align-items:center}
+
+/* modal + drawer */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(2px);z-index:50;display:none}
+.ov.on{display:block}
+.modal{position:fixed;z-index:60;top:50%;left:50%;transform:translate(-50%,-50%);width:min(760px,calc(100% - 24px));max-height:calc(100vh - 40px);overflow-y:auto;background:var(--bg2);border:1px solid var(--line);border-radius:10px;display:none}
+.modal.on{display:block;animation:pop .2s}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-48%)}}
+.modal.sm{width:min(460px,calc(100% - 24px))}
+.mh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2);z-index:2}
+.mh h2{font-size:26px}
+.mb{padding:22px}
+.mf{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--bg2)}
+.x{width:34px;height:34px;border-radius:50%;font-size:20px;color:var(--mute);display:grid;place-items:center}
+.x:hover{background:#1f1a15;color:var(--ink)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg2);border-left:1px solid var(--line);z-index:60;transform:translateX(100%);transition:.3s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
+.drawer.on{transform:none}
+.dl{display:grid;grid-template-columns:120px 1fr;gap:8px 12px;font-size:13.5px}
+.dl dt{color:var(--dim)}
+.items .r{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.tot .r{display:flex;justify-content:space-between;padding:4px 0;font-size:13.5px;color:var(--mute)}
+.tot .r.big{font-family:var(--serif);font-size:24px;color:var(--ink);margin-top:6px}
+.tot .r.big b{color:var(--gold2);font-weight:500}
+.hist{border-left:1px solid var(--line2);margin-left:6px;padding-left:18px}
+.hist .h{position:relative;padding-bottom:14px;font-size:13px}
+.hist .h::before{content:"";position:absolute;left:-23px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--gold)}
+.hist .h small{color:var(--dim);display:block}
+.stbtns{display:flex;gap:8px;flex-wrap:wrap}
+.wa{background:#1f8f4e;color:#fff}.wa:hover{background:#25a35a}
+
+/* login */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse 50% 50% at 50% 40%,rgba(212,172,98,.12),transparent 70%)}
+.login .box{width:min(400px,100%);padding:36px 32px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;text-align:center}
+.login img{height:70px;margin:0 auto 6px;display:block}
+.login h1{font-size:30px;margin-bottom:4px}
+.login p{color:var(--dim);font-size:13px;margin-bottom:24px}
+.login .fld{text-align:left}
+.err{color:var(--red);font-size:13px;min-height:18px;margin-bottom:10px}
+
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,30px);opacity:0;background:#1d1914;border:1px solid var(--line2);padding:11px 20px;border-radius:30px;font-size:13.5px;z-index:90;transition:.25s;pointer-events:none;max-width:90%}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.bad{border-color:rgba(224,122,106,.5);color:#f3b5aa}
+.loading{opacity:.5;pointer-events:none}
+
+@media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}}
+.gchart{display:flex;align-items:flex-end;gap:10px;height:130px}
+.gchart>div{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.gchart .bb{width:100%;max-width:34px;display:flex;align-items:flex-end;gap:3px;height:100%}
+.gchart .bb i{flex:1;border-radius:3px 3px 0 0;min-height:2px;position:relative}
+.gchart .bb i.v{background:#3a3127}.gchart .bb i.g{background:var(--grad)}
+.gchart .bb i:hover::after{content:attr(data-t);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#000;border:1px solid var(--line2);padding:4px 8px;border-radius:4px;font-style:normal;font-size:11px;white-space:nowrap;color:var(--ink);z-index:3}
+.gchart small{font-size:10.5px;color:var(--dim)}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--dim);margin-top:8px}.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tag-canal{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);margin-left:6px}
+.mitems .r{display:grid;grid-template-columns:1fr 70px 100px 34px;gap:8px;margin-bottom:8px;align-items:center}
+.margin{font-size:11px;color:var(--green)}
+@media(max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;width:260px;z-index:70;transform:translateX(-100%);transition:.3s}
+  .side.on{transform:none}
+  .mob{display:grid}
+  .main{padding:18px 16px 50px}
+  .g3,.g2,.f2,.f3{grid-template-columns:1fr}
+  .top h1{font-size:28px}
+  .filters .search{max-width:none;min-width:0}
+}
+@media(max-width:520px){.g4{grid-template-columns:1fr 1fr}.kpi b{font-size:24px}}
+</style>
+</head>
+<body>
+
+<!-- ======== LOGIN / SETUP ======== -->
+<div class="login hidden" id="vLogin">
+  <form class="box" id="loginForm">
+    <img src="../assets/mono.png" alt="">
+    <h1 id="lgTitle">Panel Luxara</h1>
+    <p id="lgSub">Ingresa con tu cuenta de administrador</p>
+    <div class="fld hidden" id="lgNameF"><label>Tu nombre</label><input class="f" name="nombre" autocomplete="name"></div>
+    <div class="fld"><label>Correo</label><input class="f" name="email" type="email" autocomplete="username" required></div>
+    <div class="fld"><label>Contraseña</label><input class="f" name="password" type="password" autocomplete="current-password" required minlength="8"></div>
+    <div class="err" id="lgErr"></div>
+    <button class="btn btn-gold" style="width:100%;padding:13px" id="lgBtn">Entrar</button>
+  </form>
+</div>
+
+<!-- ======== APP ======== -->
+<div class="app hidden" id="vApp">
+  <aside class="side" id="side">
+    <div class="logo"><img src="../assets/mono.png" alt=""><div><b>LUXARA</b><small>Administración</small></div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot"><b id="uName"></b><small id="uRole"></small>
+      <div class="row"><button onclick="openPwd()">Mi contraseña</button><button onclick="logout()">Salir</button></div>
+      <div class="row"><a href="../" target="_blank" style="color:var(--gold);font-size:12.5px">Ver tienda ↗</a></div>
+    </div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+
+<div class="ov" id="ov" onclick="closeAll()"></div>
+<div class="modal" id="modal"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== utilidades ================== */
+const API = '../api/admin.php';
+let CSRF = '', ME = null, VIEW = 'dashboard', CACHE = {};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const Q = n => 'Q' + Number(n || 0).toLocaleString('es-GT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fdate = (s, t = true) => s ? new Date(s.replace(' ', 'T')).toLocaleString('es-GT', t ? {dateStyle: 'medium', timeStyle: 'short'} : {dateStyle: 'medium'}) : '—';
+const dtLocal = s => s ? s.replace(' ', 'T').slice(0, 16) : '';
+const ESTADOS = {pendiente: 'Pendiente', confirmado: 'Confirmado', enviado: 'Enviado', entregado: 'Entregado', cancelado: 'Cancelado'};
+const pill = e => `<span class="pill st-${e}">${ESTADOS[e] || e}</span>`;
+function toast(m, bad) { const t = $('#toast'); t.textContent = m; t.className = 'toast on' + (bad ? ' bad' : ''); clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 3200); }
+
+async function api(r, {method = 'GET', body, query} = {}) {
+  const qs = new URLSearchParams({r, ...(query || {})}).toString();
+  const opt = {method, credentials: 'same-origin', headers: {'X-CSRF-Token': CSRF}};
+  if (body instanceof FormData) opt.body = body;
+  else if (body) { opt.body = JSON.stringify(body); opt.headers['Content-Type'] = 'application/json'; }
+  let res, data;
+  try { res = await fetch(API + '?' + qs, opt); data = await res.json(); }
+  catch (e) { throw new Error('No se pudo conectar con el servidor'); }
+  if (res.status === 401 && r !== 'login') { showLogin(); throw new Error(data.error || 'Sesión expirada'); }
+  if (!data.ok) throw new Error(data.error || 'Error');
+  return data;
+}
+async function run(fn, btn) {
+  if (btn) btn.disabled = true;
+  try { return await fn(); } catch (e) { toast(e.message, true); } finally { if (btn) btn.disabled = false; }
+}
+function formData(form) {
+  const o = {};
+  form.querySelectorAll('[name]').forEach(el => { if (el.type === 'checkbox') o[el.name] = el.checked ? 1 : 0; else if (el.type !== 'radio' || el.checked) o[el.name] = el.value; });
+  return o;
+}
+
+/* mini ilustración si el producto no tiene foto */
+function bottleMini(p) {
+  const L = p.color_liquido || '#7a4b12', C = p.color_tapa || '#d4ac62';
+  return `<svg viewBox="0 0 40 56"><rect x="15" y="2" width="10" height="12" rx="1" fill="${C}"/><rect x="17" y="13" width="6" height="4" fill="#d4ac62"/><rect x="6" y="17" width="28" height="36" rx="3" fill="${L}"/><rect x="6" y="17" width="28" height="36" rx="3" fill="none" stroke="#fff" stroke-opacity=".2"/><rect x="11" y="30" width="18" height="9" fill="#0b0908" stroke="#d4ac62" stroke-width=".5"/></svg>`;
+}
+const thumb = p => `<div class="thumb">${p.imagen ? `<img src="${p.imagen.startsWith('http') ? esc(p.imagen) : '../' + esc(p.imagen)}" alt="">` : bottleMini(p)}</div>`;
+
+/* ================== modal / drawer ================== */
+function openModal(html, sm) { $('#drawer').classList.remove('on'); const m = $('#modal'); m.className = 'modal on' + (sm ? ' sm' : ''); m.innerHTML = html; $('#ov').classList.add('on'); const f = m.querySelector('input:not([type=hidden]):not([type=checkbox]),select,textarea'); f && setTimeout(() => f.focus(), 50); }
+function openDrawer(html) { $('#modal').className = 'modal'; const d = $('#drawer'); d.innerHTML = html; d.classList.add('on'); $('#ov').classList.add('on'); }
+function closeAll() { $('#modal').className = 'modal'; $('#drawer').classList.remove('on'); $('#ov').classList.remove('on'); $('#side').classList.remove('on'); }
+document.addEventListener('keydown', e => e.key === 'Escape' && closeAll());
+const mHead = t => `<div class="mh"><h2>${t}</h2><button class="x" type="button" onclick="closeAll()">×</button></div>`;
+function confirmBox(msg, onYes, label = 'Eliminar') {
+  openModal(`${mHead('Confirmar')}<div class="mb"><p>${msg}</p></div><div class="mf"><button class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-red" id="cfYes">${label}</button></div>`, true);
+  $('#cfYes').onclick = e => run(async () => { await onYes(); closeAll(); }, e.target);
+}
+
+/* ================== acceso ================== */
+let SETUP = false;
+async function boot() {
+  try {
+    const d = await api('estado');
+    CSRF = d.csrf; SETUP = d.needs_setup;
+    if (d.user) { ME = d.user; showApp(); } else showLogin();
+  } catch (e) {
+    showLogin(); $('#lgErr').textContent = e.message + '. Revisa config/config.php y que la base de datos tenga las tablas.';
+  }
+}
+function showLogin() {
+  $('#vApp').classList.add('hidden'); $('#vLogin').classList.remove('hidden'); closeAll();
+  $('#lgNameF').classList.toggle('hidden', !SETUP);
+  $('#lgTitle').textContent = SETUP ? 'Bienvenido a Luxara' : 'Panel Luxara';
+  $('#lgSub').textContent = SETUP ? 'Crea la cuenta del administrador principal' : 'Ingresa con tu cuenta de administrador';
+  $('#lgBtn').textContent = SETUP ? 'Crear administrador' : 'Entrar';
+}
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault(); $('#lgErr').textContent = ''; $('#lgBtn').disabled = true;
+  try {
+    await api(SETUP ? 'setup' : 'login', {method: 'POST', body: formData(e.target)});
+    const st = await api('estado'); ME = st.user; CSRF = st.csrf; SETUP = false; e.target.reset(); showApp();
+  } catch (err) { $('#lgErr').textContent = err.message; }
+  finally { $('#lgBtn').disabled = false; }
+};
+async function logout() { await api('logout', {method: 'POST'}).catch(() => {}); ME = null; showLogin(); }
+function openPwd() {
+  openModal(`${mHead('Cambiar mi contraseña')}<form id="pwF"><div class="mb">
+    <div class="fld"><label>Contraseña actual</label><input class="f" type="password" name="actual" required></div>
+    <div class="fld"><label>Nueva contraseña</label><input class="f" type="password" name="nueva" minlength="8" required><span class="hint">Mínimo 8 caracteres</span></div>
+  </div><div class="mf"><button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Guardar</button></div></form>`, true);
+  $('#pwF').onsubmit = e => { e.preventDefault(); run(async () => { await api('mi_password', {method: 'POST', body: formData(e.target)}); closeAll(); toast('Contraseña actualizada'); }, e.submitter); };
+}
+
+/* ================== navegación ================== */
+const IC = {
+  dashboard: '<path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/>',
+  pedidos: '<path d="M6 2h12l2 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M4 6h16M9 11h6M9 15h6"/>',
+  productos: '<path d="M9 2h6v4H9zM10 6h4v2h-4z"/><rect x="5" y="8" width="14" height="14" rx="2"/>',
+  inventario: '<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+  categorias: '<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>',
+  cupones: '<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 2"/>',
+  promociones: '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="8" cy="8" r="1.5"/>',
+  ajustes: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  usuarios: '<circle cx="9" cy="8" r="4"/><path d="M2 21c1-4 4-6 7-6s6 2 7 6M16 4a4 4 0 0 1 0 8M22 21c-.5-2.5-2-4.5-4-5.5"/>',
+};
+const VIEWS = [
+  ['dashboard', 'Resumen'], ['pedidos', 'Pedidos'], ['productos', 'Perfumes'], ['inventario', 'Inventario'],
+  ['cupones', 'Cupones'], ['promociones', 'Promociones'], ['categorias', 'Categorías', 1], ['ajustes', 'Ajustes', 1], ['usuarios', 'Usuarios', 1],
+];
+function showApp() {
+  $('#vLogin').classList.add('hidden'); $('#vApp').classList.remove('hidden');
+  $('#uName').textContent = ME.nombre; $('#uRole').textContent = (ME.rol === 'admin' ? 'Administrador' : 'Vendedor') + ' · ' + ME.email;
+  renderNav(); go(location.hash.slice(1) || 'dashboard');
+}
+function renderNav(pend) {
+  $('#nav').innerHTML = VIEWS.filter(v => !v[2] || ME.rol === 'admin').map(([k, l]) =>
+    `<button class="${VIEW === k ? 'on' : ''}" data-v="${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${IC[k]}</svg>${l}${k === 'pedidos' && pend ? `<span class="cnt">${pend}</span>` : ''}</button>`).join('');
+  $('#nav').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.v));
+}
+function go(v) {
+  if (!VIEWS.some(x => x[0] === v && (!x[2] || ME.rol === 'admin'))) v = 'dashboard';
+  VIEW = v; history.replaceState(null, '', '#' + v); closeAll();
+  $('#nav').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  window['v_' + v]();
+}
+function header(title, sub, acts = '') {
+  return `<div class="top"><div style="display:flex;gap:12px;align-items:center"><button class="x mob" onclick="$('#side').classList.add('on');$('#ov').classList.add('on')">☰</button><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div></div><div class="acts">${acts}</div></div>`;
+}
+const M = () => $('#main');
+setInterval(() => ME && api('dashboard').then(d => renderNav(d.pend)).catch(() => {}), 60000);
+
+/* ================== RESUMEN ================== */
+async function v_dashboard() {
+  M().innerHTML = header('Resumen', new Date().toLocaleDateString('es-GT', {weekday: 'long', day: 'numeric', month: 'long'})) + '<div class="empty">Cargando…</div>';
+  const d = await api('dashboard'); renderNav(d.pend);
+  const varM = d.mesAnt ? ((d.mes.t - d.mesAnt) / d.mesAnt * 100) : null;
+  const maxT = Math.max(1, ...d.serie.map(s => s.t)), maxTop = Math.max(1, ...d.top.map(t => +t.cant)), maxD = Math.max(1, ...d.deptos.map(t => +t.n));
+  M().innerHTML = header('Resumen', new Date().toLocaleDateString('es-GT', {weekday: 'long', day: 'numeric', month: 'long'}), `<button class="btn btn-gold" onclick="go('pedidos')">Ver pedidos</button>`) + `
+  <div class="grid g4" style="margin-bottom:16px">
+    <div class="card kpi"><span>Ventas de hoy</span><b>${Q(d.hoy.t)}</b><small>${d.hoy.n} pedido(s)</small></div>
+    <div class="card kpi"><span>Ventas del mes</span><b>${Q(d.mes.t)}</b><small class="${varM === null ? '' : varM >= 0 ? 'up' : 'down'}">${varM === null ? d.mes.n + ' pedido(s)' : (varM >= 0 ? '▲ ' : '▼ ') + Math.abs(varM).toFixed(0) + '% vs. mes anterior'}</small></div>
+    <div class="card kpi" style="cursor:pointer" onclick="PF.estado='pendiente';go('pedidos')"><span>Por confirmar</span><b>${d.pend}</b><small>pedidos pendientes</small></div>
+    <div class="card kpi"><span>Ganancia del mes</span><b>${Q(d.ganancia)}</b><small>${d.mes.t ? Math.round(d.ganancia / d.mes.t * 100) + '% de margen' : 'ventas − costo'}</small></div>
+  </div>
+  <div class="grid" style="grid-template-columns:2fr 1fr;margin-bottom:16px">
+    <div class="card pad"><h3>Ventas · últimos 14 días <small>sin cancelados</small></h3>
+      <div class="chart">${d.serie.map(s => `<div><i style="height:${s.t / maxT * 100}%" data-t="${Q(s.t)} · ${s.n} ped."></i><small>${s.d.slice(8)}</small></div>`).join('')}</div></div>
+    <div class="card pad"><h3>Stock bajo <small><a href="#" onclick="IF.filtro='bajo';go('inventario');return false" style="color:var(--gold)">ver todo</a></small></h3>
+      <div class="list">${d.bajo.length ? d.bajo.map(b => `<div class="it"><div>${esc(b.nombre)}<small>${esc(b.variante)}</small></div><span class="pill ${b.stock <= 0 ? 'st-out' : 'st-low'}">${b.stock <= 0 ? 'Agotado' : b.stock + ' u.'}</span></div>`).join('') : '<div class="empty">Todo el inventario está bien ✓</div>'}</div></div>
+  </div>
+  <div class="grid g4 dash4">
+    <div class="card pad"><h3>Últimos pedidos</h3><div class="list">${d.ultimos.length ? d.ultimos.map(p => `<div class="it" style="cursor:pointer" onclick="openPedido(${p.id})"><div><span class="mono">${esc(p.numero)}</span><small>${esc(p.nombre)}${p.departamento ? ' · ' + esc(p.departamento) : ''}${p.canal === 'manual' ? ' · directa' : ''}</small></div><div style="text-align:right">${Q(p.total)}<br>${pill(p.estado)}</div></div>`).join('') : '<div class="empty">Aún no hay pedidos</div>'}</div></div>
+    <div class="card pad"><h3>Más vendidos <small>30 días</small></h3><div class="bars">${d.top.length ? d.top.map(t => `<div class="r"><span>${esc(t.nombre)}</span><span>${t.cant} u.</span><div class="b"><i style="width:${t.cant / maxTop * 100}%"></i></div></div>`).join('') : '<div class="empty">Sin ventas aún</div>'}</div></div>
+    <div class="card pad"><h3>Ventas y ganancia <small>últimos meses</small></h3>${ganChart(d.mesesGan)}
+      <div style="display:flex;gap:16px;margin-top:14px;font-size:12px;color:var(--mute)">${['web', 'manual'].map(c => { const x = d.canales.find(k => k.canal === c) || {n: 0, t: 0}; return `<div><span class="pill ${c === 'web' ? 'st-confirmado' : 'st-enviado'}">${c === 'web' ? 'Tienda web' : 'Venta directa'}</span><br><span style="font-size:13px;color:var(--ink)">${x.n} · ${Q(x.t)}</span> <small style="color:var(--dim)">este mes</small></div>`; }).join('')}</div></div>
+    <div class="card pad"><h3>Por departamento</h3><div class="bars">${d.deptos.length ? d.deptos.map(t => `<div class="r"><span>${esc(t.departamento)}</span><span>${t.n}</span><div class="b"><i style="width:${t.n / maxD * 100}%"></i></div></div>`).join('') : '<div class="empty">Sin datos aún</div>'}</div></div>
+  </div>`;
+}
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function ganChart(rows) {
+  if (!rows.length) return '<div class="empty">Sin ventas aún</div>';
+  const mx = Math.max(1, ...rows.map(r => +r.venta));
+  return `<div class="gchart">${rows.map(r => { const g = +r.venta - +r.costo; return `<div><div class="bb"><i class="v" style="height:${r.venta / mx * 100}%" data-t="Ventas ${Q(r.venta)}"></i><i class="g" style="height:${Math.max(0, g) / mx * 100}%" data-t="Ganancia ${Q(g)}"></i></div><small>${MESES[+r.m.slice(5) - 1]}</small></div>`; }).join('')}</div>
+    <div class="legend"><span><i style="background:#3a3127"></i>Ventas</span><span><i style="background:var(--gold)"></i>Ganancia</span></div>`;
+}
+
+/* ================== PEDIDOS ================== */
+const PF = {estado: '', canal: '', q: '', desde: '', hasta: '', page: 1};
+async function v_pedidos() {
+  M().innerHTML = header('Pedidos', 'Pedidos de la tienda web y ventas directas', `<button class="btn btn-gold" onclick="ventaManual()">+ Venta directa</button><button class="btn btn-line" onclick="exportar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Exportar a Excel</button>`) + `
+    <div class="tabs" id="pTabs"></div>
+    <div class="filters">
+      <input class="f search" id="pQ" placeholder="Buscar por número, nombre o teléfono" value="${esc(PF.q)}">
+      <select class="f" id="pC"><option value="">Web y directas</option><option value="web">Solo tienda web</option><option value="manual">Solo ventas directas</option></select>
+      <input class="f" type="date" id="pD" value="${PF.desde}" title="Desde"><input class="f" type="date" id="pH" value="${PF.hasta}" title="Hasta">
+    </div>
+    <div class="card"><div class="tw" id="pTable"><div class="empty">Cargando…</div></div></div>`;
+  let t; $('#pQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { PF.q = e.target.value; PF.page = 1; loadPedidos(); }, 300); };
+  $('#pC').value = PF.canal; $('#pC').onchange = e => { PF.canal = e.target.value; PF.page = 1; loadPedidos(); };
+  $('#pD').onchange = e => { PF.desde = e.target.value; PF.page = 1; loadPedidos(); };
+  $('#pH').onchange = e => { PF.hasta = e.target.value; PF.page = 1; loadPedidos(); };
+  loadPedidos();
+}
+async function loadPedidos() {
+  const d = await api('pedidos', {query: PF});
+  const total = Object.values(d.conteo).reduce((a, b) => a + +b, 0);
+  $('#pTabs').innerHTML = [['', 'Todos', total], ...Object.keys(ESTADOS).map(k => [k, ESTADOS[k], d.conteo[k] || 0])]
+    .map(([k, l, n]) => `<button class="${PF.estado === k ? 'on' : ''}" data-e="${k}">${l}<em>${n}</em></button>`).join('');
+  $('#pTabs').querySelectorAll('button').forEach(b => b.onclick = () => { PF.estado = b.dataset.e; PF.page = 1; loadPedidos(); });
+  renderNav(d.conteo.pendiente || 0);
+  $('#pTable').innerHTML = !d.pedidos.length ? '<div class="empty">No hay pedidos con estos filtros</div>' : `<table><thead><tr><th>Pedido</th><th>Cliente</th><th>Destino</th><th>Pago</th><th class="num">Total</th><th>Estado</th></tr></thead><tbody>
+    ${d.pedidos.map(p => `<tr class="click" onclick="openPedido(${p.id})"><td><span class="mono">${esc(p.numero)}</span>${p.canal === 'manual' ? '<span class="tag-canal">Directa</span>' : ''}<small>${fdate(p.creado)}</small></td>
+      <td>${esc(p.nombre)}<small>${p.telefono ? '+502 ' + esc(p.telefono) : '—'}</small></td><td>${esc(p.municipio || '—')}<small>${esc(p.departamento)}</small></td>
+      <td><small style="color:var(--mute)">${esc(p.metodo_pago)}</small></td><td class="num">${Q(p.total)}<small>${p.items} artículo(s)</small></td><td>${pill(p.estado)}</td></tr>`).join('')}
+    </tbody></table><div class="pager"><span>${d.total} pedido(s)</span><div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-line btn-sm" ${d.page <= 1 ? 'disabled' : ''} onclick="PF.page--;loadPedidos()">‹ Anterior</button><span>${d.page} / ${d.pages}</span>
+      <button class="btn btn-line btn-sm" ${d.page >= d.pages ? 'disabled' : ''} onclick="PF.page++;loadPedidos()">Siguiente ›</button></div></div>`;
+}
+function exportar() { location.href = API + '?' + new URLSearchParams({r: 'exportar_pedidos', estado: PF.estado, canal: PF.canal, q: PF.q, desde: PF.desde, hasta: PF.hasta}); }
+
+const NEXT = {pendiente: ['confirmado', 'cancelado'], confirmado: ['enviado', 'cancelado'], enviado: ['entregado', 'cancelado'], entregado: [], cancelado: []};
+async function openPedido(id) {
+  const {pedido: p} = await api('pedido', {query: {id}});
+  const msgCliente = `Hola ${p.nombre.split(' ')[0]}, te escribimos de Luxara sobre tu pedido ${p.numero} por ${Q(p.total)}. `;
+  openDrawer(`${mHead(`<span class="mono" style="font-size:20px">${esc(p.numero)}</span>`)}<div class="mb">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div>${pill(p.estado)} <span class="pill ${p.canal === 'web' ? 'st-confirmado' : 'st-enviado'}">${p.canal === 'web' ? 'Tienda web' : 'Venta directa'}</span></div><small style="color:var(--dim)">${fdate(p.creado)}</small></div>
+    ${NEXT[p.estado].length ? `<div class="sec">Cambiar estado</div><div class="stbtns" style="margin-bottom:10px">${NEXT[p.estado].map(e => `<button class="btn ${e === 'cancelado' ? 'btn-red' : 'btn-gold'} btn-sm" onclick="cambiarEstado(${p.id},'${e}')">${e === 'cancelado' ? 'Cancelar pedido' : 'Marcar como ' + ESTADOS[e].toLowerCase()}</button>`).join('')}</div>` : ''}
+    <div class="sec">Cliente</div>
+    <dl class="dl"><dt>Nombre</dt><dd>${esc(p.nombre)} ${p.otros ? `<small style="color:var(--gold)">· ${p.otros} pedido(s) anteriores</small>` : ''}</dd>
+      ${p.telefono ? `<dt>Teléfono</dt><dd>+502 ${esc(p.telefono)}</dd>` : ''}${p.email ? `<dt>Correo</dt><dd>${esc(p.email)}</dd>` : ''}
+      ${p.direccion || p.municipio ? `<dt>Dirección</dt><dd>${esc(p.direccion)}<br>${esc(p.municipio)}${p.departamento ? ', ' + esc(p.departamento) : ''}</dd>` : ''}
+      ${p.referencias ? `<dt>Referencias</dt><dd>${esc(p.referencias)}</dd>` : ''}<dt>NIT</dt><dd>${esc(p.nit)}</dd><dt>Pago</dt><dd>${esc(p.metodo_pago)}</dd>
+      ${p.nota ? `<dt>Nota</dt><dd style="color:var(--gold2)">${esc(p.nota)}</dd>` : ''}</dl>
+    ${p.telefono ? `<div style="margin-top:14px"><a class="btn wa btn-sm" href="https://wa.me/502${esc(p.telefono)}?text=${encodeURIComponent(msgCliente)}" target="_blank" rel="noopener">Escribir al cliente por WhatsApp</a></div>` : ''}
+    <div class="sec">Productos</div>
+    <div class="items">${p.items.map(i => `<div class="r"><span>${i.cantidad} × ${esc(i.nombre)} <small style="color:var(--dim)">${esc(i.variante)} · ${Q(i.precio)}</small></span><span>${Q(i.total)}</span></div>`).join('')}</div>
+    <div class="tot" style="margin-top:10px"><div class="r"><span>Subtotal</span><span>${Q(p.subtotal)}</span></div>
+      ${+p.descuento ? `<div class="r" style="color:var(--green)"><span>Descuento ${esc(p.cupon_codigo || '')}</span><span>−${Q(p.descuento)}</span></div>` : ''}
+      <div class="r"><span>Envío</span><span>${+p.envio ? Q(p.envio) : 'Gratis'}</span></div><div class="r big"><span>Total</span><b>${Q(p.total)}</b></div>
+      <div class="r" style="margin-top:6px"><span>Costo de los productos</span><span>${Q(p.costo_total)}</span></div>
+      <div class="r" style="color:var(--green)"><span>Ganancia</span><span>${Q(+p.subtotal - +p.descuento - p.costo_total)}${p.sin_costo ? ' <small style="color:var(--amber)">(' + p.sin_costo + ' sin costo registrado)</small>' : ''}</span></div></div>
+    <div class="sec">Historial</div>
+    <div class="hist">${p.historial.map(h => `<div class="h">${pill(h.estado)} ${h.nota ? esc(h.nota) : ''}<small>${fdate(h.creado)}${h.usuario ? ' · ' + esc(h.usuario) : ''}</small></div>`).join('')}</div>
+    <form id="noteF" style="display:flex;gap:8px;margin-top:8px"><input class="f" name="nota" placeholder="Agregar nota interna (ej. guía de envío 12345)"><button class="btn btn-line">Agregar</button></form>
+  </div>`);
+  $('#noteF').onsubmit = e => { e.preventDefault(); run(async () => { await api('pedido_nota', {method: 'POST', body: {id: p.id, nota: e.target.nota.value}}); openPedido(p.id); }, e.submitter); };
+}
+function cambiarEstado(id, estado) {
+  const cancel = estado === 'cancelado';
+  openModal(`${mHead(cancel ? 'Cancelar pedido' : 'Cambiar a ' + ESTADOS[estado])}<form id="esF"><div class="mb">
+    ${cancel ? '<p style="margin-bottom:14px;color:var(--mute)">El stock de los productos regresará al inventario y, si usó cupón, se liberará un uso. Esta acción no se puede deshacer.</p>' : ''}
+    <div class="fld"><label>Nota (opcional)</label><input class="f" name="nota" placeholder="${cancel ? 'Motivo de la cancelación' : estado === 'enviado' ? 'Ej. Guía Cargo Expreso 123456' : ''}"></div>
+  </div><div class="mf"><button type="button" class="btn btn-line" onclick="openPedido(${id})">Volver</button><button class="btn ${cancel ? 'btn-red' : 'btn-gold'}">${cancel ? 'Cancelar pedido' : 'Confirmar'}</button></div></form>`, true);
+  $('#esF').onsubmit = e => { e.preventDefault(); run(async () => { await api('pedido_estado', {method: 'POST', body: {id, estado, nota: e.target.nota.value}}); toast('Pedido actualizado'); closeAll(); if (VIEW === 'pedidos') loadPedidos(); else go(VIEW); openPedido(id); }, e.submitter); };
+}
+
+/* ================== PRODUCTOS ================== */
+const PRF = {q: '', categoria: '', activo: ''};
+async function v_productos() {
+  M().innerHTML = header('Perfumes', 'Catálogo que se muestra en la tienda', `<button class="btn btn-gold" onclick="editProducto()">+ Nuevo perfume</button>`) + `
+    <div class="filters"><input class="f search" id="prQ" placeholder="Buscar por nombre o marca" value="${esc(PRF.q)}">
+      <select class="f" id="prC"><option value="">Todas las categorías</option></select>
+      <select class="f" id="prA"><option value="">Activos e inactivos</option><option value="1">Solo visibles</option><option value="0">Solo ocultos</option></select></div>
+    <div class="card"><div class="tw" id="prTable"><div class="empty">Cargando…</div></div></div>`;
+  let t; $('#prQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { PRF.q = e.target.value; loadProductos(); }, 300); };
+  $('#prC').onchange = e => { PRF.categoria = e.target.value; loadProductos(); };
+  $('#prA').value = PRF.activo; $('#prA').onchange = e => { PRF.activo = e.target.value; loadProductos(); };
+  loadProductos();
+}
+async function loadProductos() {
+  const d = await api('productos', {query: PRF}); CACHE.cats = d.categorias; CACHE.prods = d.productos;
+  const sel = $('#prC'); if (sel && sel.options.length === 1) { sel.innerHTML += d.categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join(''); sel.value = PRF.categoria; }
+  $('#prTable').innerHTML = !d.productos.length ? '<div class="empty">No hay perfumes. Crea el primero con “+ Nuevo perfume”.</div>' : `<table><thead><tr><th>Perfume</th><th>Categoría</th><th>Presentaciones</th><th class="num">Stock</th><th class="num">Vendidos</th><th>Estado</th><th></th></tr></thead><tbody>
+  ${d.productos.map(p => { const vs = p.variantes.filter(v => +v.activo), st = vs.reduce((a, v) => a + +v.stock, 0);
+    return `<tr class="click" onclick="editProducto(${p.id})"><td><div class="pc">${thumb(p)}<div>${esc(p.nombre)}<small>${esc(p.marca || '')}</small></div></div></td>
+    <td>${esc(p.categoria || '—')}</td><td>${vs.map(v => `${esc(v.nombre)} · ${Q(v.precio)}${v.costo !== null ? ` <span class="margin">+${Q(v.precio - v.costo)}</span>` : ''}`).join('<br>') || '<small>Sin presentaciones</small>'}</td>
+    <td class="num">${st <= 0 ? '<span class="pill st-out">Agotado</span>' : st}</td><td class="num">${p.ventas}</td>
+    <td>${+p.activo ? '<span class="pill st-on">Visible</span>' : '<span class="pill st-off">Oculto</span>'} ${+p.nuevo ? '<span class="pill st-low">Nuevo</span>' : ''}</td>
+    <td class="num"><button class="btn btn-line btn-sm" onclick="event.stopPropagation();editProducto(${p.id})">Editar</button></td></tr>`; }).join('')}</tbody></table>`;
+}
+function varRow(v = {}) {
+  return `<tr data-id="${v.id || ''}"><td><input class="f" data-k="nombre" value="${esc(v.nombre || '100 ml')}" placeholder="100 ml"></td>
+    <td><input class="f" data-k="precio" type="number" step="0.01" min="0" value="${v.precio ?? ''}" placeholder="0.00"></td>
+    <td><input class="f" data-k="precio_anterior" type="number" step="0.01" min="0" value="${v.precio_anterior ?? ''}" placeholder="opcional"></td>
+    <td><input class="f" data-k="costo" type="number" step="0.01" min="0" value="${v.costo ?? ''}" placeholder="inversión"></td>
+    <td><input class="f" data-k="stock" type="number" min="0" value="${v.stock ?? 0}"></td>
+    <td><input class="f" data-k="stock_minimo" type="number" min="0" value="${v.stock_minimo ?? 0}"></td>
+    <td><button type="button" class="x" title="Quitar" onclick="this.closest('tr').remove()">×</button></td></tr>`;
+}
+async function editProducto(id) {
+  if (!CACHE.cats) { const d = await api('productos'); CACHE.cats = d.categorias; CACHE.prods = d.productos; }
+  const p = id ? CACHE.prods.find(x => +x.id === +id) : {activo: 1, forma: 'square', color_liquido: '#7a4b12', color_tapa: '#d4ac62', variantes: [{}]};
+  const F = [['square', 'Cuadrado'], ['round', 'Redondo'], ['tall', 'Alto'], ['flask', 'Frasco'], ['facet', 'Facetado'], ['box', 'Caja de regalo']];
+  openModal(`${mHead(id ? 'Editar perfume' : 'Nuevo perfume')}<form id="prF"><div class="mb">
+    <div class="sec">Información</div>
+    <div class="f2"><div class="fld"><label>Nombre del perfume *</label><input class="f" name="nombre" value="${esc(p.nombre || '')}" required></div>
+      <div class="fld"><label>Marca / línea</label><input class="f" name="marca" value="${esc(p.marca || '')}"></div></div>
+    <div class="f2"><div class="fld"><label>Categoría</label><select class="f" name="categoria_id"><option value="">Sin categoría</option>${CACHE.cats.map(c => `<option value="${c.id}" ${+p.categoria_id === +c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+      <div class="fld"><label>Orden en el catálogo</label><input class="f" name="orden" type="number" value="${p.orden || 0}"><span class="hint">Menor número = aparece primero</span></div></div>
+    <div class="fld"><label>Descripción</label><textarea class="f" name="descripcion" rows="3">${esc(p.descripcion || '')}</textarea></div>
+    <div class="f3"><div class="fld"><label>Notas de salida</label><input class="f" name="notas_salida" value="${esc(p.notas_salida || '')}"></div>
+      <div class="fld"><label>Notas de corazón</label><input class="f" name="notas_corazon" value="${esc(p.notas_corazon || '')}"></div>
+      <div class="fld"><label>Notas de fondo</label><input class="f" name="notas_fondo" value="${esc(p.notas_fondo || '')}"></div></div>
+    <div class="sec">Presentaciones, precios y stock</div>
+    <table class="vt"><thead><tr><th>Tamaño</th><th>Precio Q *</th><th>Precio antes Q</th><th>Costo Q</th><th>Stock</th><th>Alerta en</th><th></th></tr></thead><tbody id="vRows">${(p.variantes.length ? p.variantes.filter(v => v.activo === undefined || +v.activo) : [{}]).map(varRow).join('')}</tbody></table>
+    <button type="button" class="btn btn-line btn-sm" onclick="$('#vRows').insertAdjacentHTML('beforeend', varRow({nombre:''}))">+ Agregar presentación</button>
+    <p class="hint" style="font-size:11.5px;color:var(--dim);margin-top:6px">“Precio antes” muestra el precio tachado. “Costo” es tu inversión por unidad: no se muestra en la tienda y sirve para calcular ganancias. “Alerta en”: avisa cuando el stock llegue a ese número.</p>
+    <div class="sec" style="margin-top:18px">Imagen</div>
+    <div class="img-up"><div class="pv" id="imgPv">${p.imagen ? `<img src="${p.imagen.startsWith('http') ? esc(p.imagen) : '../' + esc(p.imagen)}">` : bottleMini(p)}</div>
+      <div style="flex:1"><input type="hidden" name="imagen" value="${esc(p.imagen || '')}">
+        <input type="file" id="imgFile" accept="image/jpeg,image/png,image/webp" class="hidden">
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-line btn-sm" onclick="$('#imgFile').click()">Subir foto</button>
+        <button type="button" class="btn btn-line btn-sm" onclick="$('[name=imagen]').value='';$('#imgPv').innerHTML=bottleMini({})">Quitar</button></div>
+        <p class="hint" style="font-size:11.5px;color:var(--dim);margin-top:8px">JPG, PNG o WEBP hasta 3 MB. Se optimiza automáticamente. Ideal: fondo oscuro, formato vertical 4:5.</p>
+        <p class="hint" style="font-size:11.5px;color:var(--dim);margin-top:10px">Sin foto, la tienda dibuja un frasco con estos colores:</p>
+        <div style="display:flex;gap:10px;margin-top:6px;align-items:center;flex-wrap:wrap"><select class="f" name="forma" style="width:auto">${F.map(([k, l]) => `<option value="${k}" ${p.forma === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+          <label class="chk">Líquido <input type="color" name="color_liquido" value="${p.color_liquido}"></label><label class="chk">Tapa <input type="color" name="color_tapa" value="${p.color_tapa}"></label></div>
+      </div></div>
+    <div class="sec" style="margin-top:18px">Visibilidad</div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap"><label class="chk"><input type="checkbox" name="activo" ${+p.activo ? 'checked' : ''}> Visible en la tienda</label>
+      <label class="chk"><input type="checkbox" name="nuevo" ${+p.nuevo ? 'checked' : ''}> Etiqueta “Nuevo”</label>
+      <label class="chk"><input type="checkbox" name="destacado" ${+p.destacado ? 'checked' : ''}> Destacado</label></div>
+  </div><div class="mf">${id ? `<button type="button" class="btn btn-red" style="margin-right:auto" onclick="delProducto(${id})">Eliminar</button>` : ''}<button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Guardar perfume</button></div></form>`);
+  $('#imgFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const fd = new FormData(); fd.append('imagen', f);
+    $('#imgPv').classList.add('loading'); run(async () => { const r = await api('subir_imagen', {method: 'POST', body: fd}); $('[name=imagen]').value = r.ruta; $('#imgPv').innerHTML = `<img src="../${r.ruta}">`; }).finally(() => $('#imgPv').classList.remove('loading')); };
+  $('#prF').onsubmit = e => {
+    e.preventDefault();
+    const body = formData(e.target); body.id = id || 0;
+    body.variantes = [...$('#vRows').querySelectorAll('tr')].map(tr => { const o = {id: tr.dataset.id || 0}; tr.querySelectorAll('[data-k]').forEach(i => o[i.dataset.k] = i.value); return o; });
+    run(async () => { await api('producto_guardar', {method: 'POST', body}); closeAll(); toast('Perfume guardado'); CACHE.prods = null; if (VIEW === 'productos') loadProductos(); else go(VIEW); }, e.submitter);
+  };
+}
+function delProducto(id) { confirmBox('¿Eliminar este perfume? Si ya tiene ventas, solo se ocultará de la tienda para conservar el historial.', async () => { const r = await api('producto_eliminar', {method: 'POST', body: {id}}); toast(r.mensaje); loadProductos(); }); }
+
+/* ================== INVENTARIO ================== */
+const IF = {q: '', filtro: ''};
+async function v_inventario() {
+  M().innerHTML = header('Inventario', 'Entradas, ajustes y existencias por presentación', `<button class="btn btn-line" onclick="verMovs()">Historial de movimientos</button>`) + `
+    <div class="grid g4" id="invRes" style="margin-bottom:16px"></div>
+    <div class="filters"><input class="f search" id="iQ" placeholder="Buscar perfume, marca o SKU" value="${esc(IF.q)}">
+      <select class="f" id="iF"><option value="">Todo</option><option value="bajo">Stock bajo</option><option value="agotado">Agotados</option></select></div>
+    <div class="card"><div class="tw" id="iTable"><div class="empty">Cargando…</div></div></div>`;
+  $('#iF').value = IF.filtro; $('#iF').onchange = e => { IF.filtro = e.target.value; loadInv(); };
+  let t; $('#iQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { IF.q = e.target.value; loadInv(); }, 300); };
+  loadInv();
+}
+async function loadInv() {
+  const d = await api('inventario', {query: IF}), r = d.resumen;
+  $('#invRes').innerHTML = `<div class="card kpi"><span>Unidades en bodega</span><b>${r.unidades}</b><small>${r.variantes} presentaciones</small></div>
+    <div class="card kpi"><span>Valor del inventario</span><b>${Q(r.valor)}</b><small>a precio de venta</small></div>
+    <div class="card kpi"><span>Inversión en bodega</span><b>${Q(r.valor_costo)}</b><small>a precio de costo</small></div>
+    <div class="card kpi"><span>Ganancia potencial</span><b>${Q(r.valor - r.valor_costo)}</b><small>${r.agotados || 0} agotado(s) · ${r.bajos || 0} con stock bajo</small></div>`;
+  $('#iTable').innerHTML = !d.items.length ? '<div class="empty">Sin resultados</div>' : `<table><thead><tr><th>Perfume</th><th>Presentación</th><th class="num">Costo</th><th class="num">Precio</th><th class="num">Stock</th><th>Estado</th><th>Movimiento rápido</th></tr></thead><tbody>
+  ${d.items.map(v => `<tr><td>${esc(v.producto)}<small>${esc(v.marca || '')}${+v.p_activo ? '' : ' · oculto'}</small></td><td>${esc(v.nombre)}${v.sku ? `<small>${esc(v.sku)}</small>` : ''}</td>
+    <td class="num">${v.costo !== null ? Q(v.costo) : '<small>—</small>'}</td><td class="num">${Q(v.precio)}${v.costo !== null ? `<small class="margin">+${Q(v.precio - v.costo)}</small>` : ''}</td><td class="num" style="font-size:16px;font-weight:500">${v.stock}</td>
+    <td>${+v.stock <= 0 ? '<span class="pill st-out">Agotado</span>' : +v.stock <= +v.stock_minimo ? '<span class="pill st-low">Bajo</span>' : '<span class="pill st-on">OK</span>'}</td>
+    <td><div style="display:flex;gap:6px"><button class="btn btn-line btn-sm" onclick="ajustar(${v.id},'${esc(v.producto).replace(/'/g, '')} · ${esc(v.nombre)}',${v.stock},'ingreso')">+ Entrada</button>
+      <button class="btn btn-line btn-sm" onclick="ajustar(${v.id},'${esc(v.producto).replace(/'/g, '')} · ${esc(v.nombre)}',${v.stock},'ajuste')">Ajustar</button>
+      <button class="btn btn-line btn-sm" title="Historial" onclick="verMovs(${v.id})">⟲</button></div></td></tr>`).join('')}</tbody></table>`;
+}
+function ajustar(id, nombre, stock, motivo) {
+  const ing = motivo === 'ingreso';
+  openModal(`${mHead(ing ? 'Registrar entrada' : 'Ajustar stock')}<form id="ajF"><div class="mb">
+    <p style="margin-bottom:16px">${nombre}<br><small style="color:var(--dim)">Stock actual: ${stock}</small></p>
+    <div class="f2"><div class="fld"><label>${ing ? 'Unidades que entran' : 'Cambio (+ suma / − resta)'}</label><input class="f" type="number" name="cambio" ${ing ? 'min="1"' : ''} required></div>
+    <div class="fld"><label>Motivo</label><select class="f" name="motivo"><option value="ingreso" ${ing ? 'selected' : ''}>Ingreso de mercadería</option><option value="ajuste" ${!ing ? 'selected' : ''}>Ajuste / conteo físico</option><option value="devolucion">Devolución de cliente</option></select></div></div>
+    <div class="fld"><label>Referencia (opcional)</label><input class="f" name="referencia" placeholder="Ej. factura proveedor 0045, producto dañado…"></div>
+  </div><div class="mf"><button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Guardar</button></div></form>`, true);
+  $('#ajF').onsubmit = e => { e.preventDefault(); const b = formData(e.target); b.variante_id = id;
+    run(async () => { const r = await api('inventario_ajustar', {method: 'POST', body: b}); closeAll(); toast('Stock actualizado: ' + r.stock + ' unidades'); loadInv(); }, e.submitter); };
+}
+async function verMovs(vid) {
+  const d = await api('movimientos', {query: vid ? {variante_id: vid} : {}});
+  const ML = {venta: 'Venta', cancelacion: 'Cancelación', ingreso: 'Ingreso', ajuste: 'Ajuste', devolucion: 'Devolución'};
+  openModal(`${mHead('Movimientos de inventario')}<div class="tw">${!d.movimientos.length ? '<div class="empty">Sin movimientos</div>' : `<table><thead><tr><th>Fecha</th><th>Producto</th><th>Motivo</th><th class="num">Cambio</th><th class="num">Queda</th></tr></thead><tbody>
+    ${d.movimientos.map(m => `<tr><td><small style="color:var(--mute)">${fdate(m.creado)}</small></td><td>${esc(m.producto)}<small>${esc(m.variante)}</small></td>
+    <td>${ML[m.motivo]}<small>${esc(m.referencia || '')}${m.usuario ? ' · ' + esc(m.usuario) : ''}</small></td>
+    <td class="num" style="color:${m.cambio > 0 ? 'var(--green)' : 'var(--red)'}">${m.cambio > 0 ? '+' : ''}${m.cambio}</td><td class="num">${m.stock_final}</td></tr>`).join('')}</tbody></table>`}</div>`);
+}
+
+/* ================== VENTA DIRECTA ================== */
+async function ventaManual() {
+  const d = await api('productos', {query: {activo: 1}});
+  CACHE.cats = d.categorias; CACHE.prods = d.productos;
+  const opts = d.productos.flatMap(p => p.variantes.filter(v => +v.activo).map(v => ({id: v.id, label: `${p.nombre}${p.marca ? ' — ' + p.marca : ''} · ${v.nombre}`, precio: +v.precio, stock: +v.stock})));
+  CACHE.vopts = opts;
+  const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  openModal(`${mHead('Registrar venta directa')}<form id="vmF"><div class="mb">
+    <p style="color:var(--mute);font-size:13px;margin-bottom:16px">Para ventas en persona, por WhatsApp o Instagram que no pasaron por la tienda web. Quedan en Pedidos y en tus reportes de ganancia.</p>
+    <div class="sec">Perfumes</div>
+    <div class="mitems" id="vmItems"></div>
+    <button type="button" class="btn btn-line btn-sm" onclick="vmRow()">+ Agregar otro perfume</button>
+    <div class="sec" style="margin-top:18px">Cliente</div>
+    <div class="f2"><div class="fld"><label>Nombre</label><input class="f" name="nombre" placeholder="Cliente de mostrador"></div>
+      <div class="fld"><label>Teléfono (opcional)</label><input class="f" name="telefono" inputmode="numeric" maxlength="9"></div></div>
+    <div class="f2"><div class="fld"><label>Departamento (opcional)</label><input class="f" name="departamento"></div><div class="fld"><label>Municipio (opcional)</label><input class="f" name="municipio"></div></div>
+    <div class="sec">Pago</div>
+    <div class="f3"><div class="fld"><label>Método</label><select class="f" name="metodo_pago"><option>Efectivo</option><option>Transferencia / depósito</option><option>Tarjeta</option><option>Crédito / a plazos</option></select></div>
+      <div class="fld"><label>Descuento (Q)</label><input class="f" type="number" step="0.01" min="0" name="descuento" value="0"></div>
+      <div class="fld"><label>Fecha</label><input class="f" type="datetime-local" name="fecha" value="${now}"></div></div>
+    <div class="f2"><div class="fld"><label>Estado</label><select class="f" name="estado"><option value="entregado">Entregado</option><option value="confirmado">Confirmado (por entregar)</option><option value="enviado">Enviado</option><option value="pendiente">Pendiente</option></select></div>
+      <div class="fld"><label>Nota</label><input class="f" name="nota" placeholder="Opcional"></div></div>
+    <label class="chk"><input type="checkbox" name="descontar" checked> Descontar del inventario</label>
+    <div class="tot" style="margin-top:16px"><div class="r big"><span>Total</span><b id="vmTotal">Q0.00</b></div></div>
+  </div><div class="mf"><button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Registrar venta</button></div></form>`);
+  vmRow();
+  $('#vmF').addEventListener('input', vmTotal);
+  $('#vmF').onsubmit = e => { e.preventDefault(); const b = formData(e.target);
+    b.items = [...$('#vmItems').children].map(r => ({variante_id: r.querySelector('select').value, cantidad: r.querySelector('[data-k=c]').value, precio: r.querySelector('[data-k=p]').value})).filter(i => i.variante_id);
+    run(async () => { const r = await api('venta_manual', {method: 'POST', body: b}); closeAll(); toast('Venta ' + r.numero + ' registrada'); if (VIEW === 'pedidos') loadPedidos(); else go(VIEW); }, e.submitter); };
+}
+function vmRow() {
+  const opts = CACHE.vopts;
+  $('#vmItems').insertAdjacentHTML('beforeend', `<div class="r"><select class="f"><option value="">Elige un perfume…</option>${opts.map(o => `<option value="${o.id}" data-p="${o.precio}" ${o.stock <= 0 ? 'disabled' : ''}>${esc(o.label)} (${o.stock <= 0 ? 'agotado' : o.stock + ' disp.'})</option>`).join('')}</select>
+    <input class="f" data-k="c" type="number" min="1" value="1" title="Cantidad"><input class="f" data-k="p" type="number" step="0.01" min="0" placeholder="Precio" title="Precio de venta"><button type="button" class="x" onclick="this.parentElement.remove();vmTotal()">×</button></div>`);
+  const r = $('#vmItems').lastElementChild; r.querySelector('select').onchange = e => { const o = e.target.selectedOptions[0]; r.querySelector('[data-k=p]').value = o.dataset.p || ''; vmTotal(); };
+}
+function vmTotal() {
+  const t = [...$('#vmItems').children].reduce((s, r) => s + (+r.querySelector('[data-k=p]').value || 0) * (+r.querySelector('[data-k=c]').value || 0), 0) - (+$('#vmF [name=descuento]').value || 0);
+  $('#vmTotal').textContent = Q(Math.max(0, t));
+}
+
+/* ================== CUPONES ================== */
+async function v_cupones() {
+  M().innerHTML = header('Cupones', 'Códigos que el cliente escribe al pagar', `<button class="btn btn-gold" onclick="editCupon()">+ Nuevo cupón</button>`) + `<div class="card"><div class="tw" id="cTable"><div class="empty">Cargando…</div></div></div>`;
+  const {cupones} = await api('cupones'); CACHE.cupones = cupones;
+  const now = Date.now();
+  $('#cTable').innerHTML = !cupones.length ? '<div class="empty">No hay cupones todavía</div>' : `<table><thead><tr><th>Código</th><th>Descuento</th><th>Condiciones</th><th>Usos</th><th>Vigencia</th><th>Estado</th></tr></thead><tbody>
+  ${cupones.map(c => { const venc = c.vence && new Date(c.vence.replace(' ', 'T')) < now, agot = c.usos_max && +c.usos >= +c.usos_max;
+    return `<tr class="click" onclick="editCupon(${c.id})"><td><span class="mono" style="font-size:14px">${esc(c.codigo)}</span><small>${esc(c.descripcion || '')}</small></td>
+    <td>${c.tipo === 'porcentaje' ? (+c.valor) + '%' : c.tipo === 'monto' ? Q(c.valor) : 'Envío gratis'}</td>
+    <td>${+c.minimo ? 'Compra mín. ' + Q(c.minimo) : '<small>Sin mínimo</small>'}</td><td>${c.usos}${c.usos_max ? ' / ' + c.usos_max : ''}</td>
+    <td><small style="color:var(--mute)">${c.inicia ? 'Desde ' + fdate(c.inicia, false) : 'Inmediato'}<br>${c.vence ? 'Hasta ' + fdate(c.vence, false) : 'Sin vencimiento'}</small></td>
+    <td>${!+c.activo ? '<span class="pill st-off">Inactivo</span>' : venc ? '<span class="pill st-out">Vencido</span>' : agot ? '<span class="pill st-low">Agotado</span>' : '<span class="pill st-on">Activo</span>'}</td></tr>`; }).join('')}</tbody></table>`;
+}
+function editCupon(id) {
+  const c = id ? CACHE.cupones.find(x => +x.id === +id) : {tipo: 'porcentaje', activo: 1, minimo: 0};
+  openModal(`${mHead(id ? 'Editar cupón' : 'Nuevo cupón')}<form id="cF"><div class="mb">
+    <div class="f2"><div class="fld"><label>Código *</label><input class="f" name="codigo" value="${esc(c.codigo || '')}" style="text-transform:uppercase" placeholder="VERANO20" required></div>
+      <div class="fld"><label>Descripción interna</label><input class="f" name="descripcion" value="${esc(c.descripcion || '')}" placeholder="Campaña de Instagram"></div></div>
+    <div class="f2"><div class="fld"><label>Tipo</label><select class="f" name="tipo" id="cTipo"><option value="porcentaje">Porcentaje (%)</option><option value="monto">Monto fijo (Q)</option><option value="envio">Envío gratis</option></select></div>
+      <div class="fld" id="cValF"><label>Valor *</label><input class="f" name="valor" type="number" step="0.01" min="0" value="${c.valor ?? ''}"></div></div>
+    <div class="f2"><div class="fld"><label>Compra mínima (Q)</label><input class="f" name="minimo" type="number" step="0.01" min="0" value="${c.minimo ?? 0}"></div>
+      <div class="fld"><label>Límite de usos</label><input class="f" name="usos_max" type="number" min="1" value="${c.usos_max ?? ''}" placeholder="Ilimitado"></div></div>
+    <div class="f2"><div class="fld"><label>Válido desde</label><input class="f" name="inicia" type="datetime-local" value="${dtLocal(c.inicia)}"></div>
+      <div class="fld"><label>Vence</label><input class="f" name="vence" type="datetime-local" value="${dtLocal(c.vence)}"></div></div>
+    <label class="chk"><input type="checkbox" name="activo" ${+c.activo ? 'checked' : ''}> Cupón activo</label>
+    ${id ? `<p style="margin-top:12px;font-size:12.5px;color:var(--dim)">Usado ${c.usos} vez/veces</p>` : ''}
+  </div><div class="mf">${id ? `<button type="button" class="btn btn-red" style="margin-right:auto" onclick="confirmBox('¿Eliminar el cupón ${esc(c.codigo)}?',async()=>{await api('cupon_eliminar',{method:'POST',body:{id:${id}}});v_cupones()})">Eliminar</button>` : ''}<button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Guardar</button></div></form>`);
+  $('#cTipo').value = c.tipo; const sync = () => $('#cValF').classList.toggle('hidden', $('#cTipo').value === 'envio'); sync(); $('#cTipo').onchange = sync;
+  $('#cF').onsubmit = e => { e.preventDefault(); const b = formData(e.target); b.id = id || 0; run(async () => { await api('cupon_guardar', {method: 'POST', body: b}); closeAll(); toast('Cupón guardado'); v_cupones(); }, e.submitter); };
+}
+
+/* ================== PROMOCIONES ================== */
+async function v_promociones() {
+  M().innerHTML = header('Promociones', 'Descuentos automáticos que bajan el precio en la tienda', `<button class="btn btn-gold" onclick="editPromo()">+ Nueva promoción</button>`) + `<div class="card"><div class="tw" id="prmTable"><div class="empty">Cargando…</div></div></div>`;
+  const {promociones} = await api('promociones'); CACHE.promos = promociones;
+  const now = Date.now();
+  $('#prmTable').innerHTML = !promociones.length ? '<div class="empty">No hay promociones. Crea una para mostrar precios de oferta por temporada (Black Friday, Día de la Madre…).</div>' : `<table><thead><tr><th>Promoción</th><th>Descuento</th><th>Aplica a</th><th>Vigencia</th><th>Estado</th></tr></thead><tbody>
+  ${promociones.map(p => { const fut = p.inicia && new Date(p.inicia.replace(' ', 'T')) > now, pas = p.termina && new Date(p.termina.replace(' ', 'T')) < now;
+    return `<tr class="click" onclick="editPromo(${p.id})"><td>${esc(p.nombre)}</td><td>${p.tipo === 'porcentaje' ? '−' + (+p.valor) + '%' : '−' + Q(p.valor)}</td>
+    <td>${p.alcance === 'todo' ? 'Toda la tienda' : p.alcance === 'categoria' ? 'Categoría: ' + esc(p.categoria) : 'Producto: ' + esc(p.producto)}</td>
+    <td><small style="color:var(--mute)">${p.inicia ? fdate(p.inicia) : 'Ya'} → ${p.termina ? fdate(p.termina) : 'sin fin'}</small></td>
+    <td>${!+p.activo ? '<span class="pill st-off">Pausada</span>' : pas ? '<span class="pill st-out">Terminó</span>' : fut ? '<span class="pill st-low">Programada</span>' : '<span class="pill st-on">En curso</span>'}</td></tr>`; }).join('')}</tbody></table>`;
+}
+async function editPromo(id) {
+  if (!CACHE.cats || !CACHE.prods) { const d = await api('productos'); CACHE.cats = d.categorias; CACHE.prods = d.productos; }
+  const p = id ? CACHE.promos.find(x => +x.id === +id) : {tipo: 'porcentaje', alcance: 'todo', activo: 1};
+  openModal(`${mHead(id ? 'Editar promoción' : 'Nueva promoción')}<form id="pmF"><div class="mb">
+    <div class="fld"><label>Nombre *</label><input class="f" name="nombre" value="${esc(p.nombre || '')}" placeholder="Black Friday 2026" required></div>
+    <div class="f2"><div class="fld"><label>Tipo</label><select class="f" name="tipo"><option value="porcentaje" ${p.tipo === 'porcentaje' ? 'selected' : ''}>Porcentaje (%)</option><option value="monto" ${p.tipo === 'monto' ? 'selected' : ''}>Monto fijo por unidad (Q)</option></select></div>
+      <div class="fld"><label>Valor *</label><input class="f" name="valor" type="number" step="0.01" min="0" value="${p.valor ?? ''}" required></div></div>
+    <div class="fld"><label>Aplica a</label><select class="f" name="alcance" id="pmA"><option value="todo">Toda la tienda</option><option value="categoria">Una categoría</option><option value="producto">Un perfume</option></select></div>
+    <div class="fld hidden" id="pmCat"><label>Categoría</label><select class="f" name="categoria_id">${CACHE.cats.map(c => `<option value="${c.id}" ${+p.categoria_id === +c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+    <div class="fld hidden" id="pmProd"><label>Perfume</label><select class="f" name="producto_id">${CACHE.prods.map(x => `<option value="${x.id}" ${+p.producto_id === +x.id ? 'selected' : ''}>${esc(x.nombre)}${x.marca ? ' — ' + esc(x.marca) : ''}</option>`).join('')}</select></div>
+    <div class="f2"><div class="fld"><label>Inicia</label><input class="f" type="datetime-local" name="inicia" value="${dtLocal(p.inicia)}"><span class="hint">Vacío = desde ya</span></div>
+      <div class="fld"><label>Termina</label><input class="f" type="datetime-local" name="termina" value="${dtLocal(p.termina)}"><span class="hint">Vacío = sin fecha de fin</span></div></div>
+    <label class="chk"><input type="checkbox" name="activo" ${+p.activo ? 'checked' : ''}> Promoción activa</label>
+    <p style="margin-top:12px;font-size:12px;color:var(--dim)">Si varias promociones aplican a un mismo perfume, se usa la que deja el precio más bajo. El precio original se muestra tachado.</p>
+  </div><div class="mf">${id ? `<button type="button" class="btn btn-red" style="margin-right:auto" onclick="confirmBox('¿Eliminar esta promoción?',async()=>{await api('promocion_eliminar',{method:'POST',body:{id:${id}}});v_promociones()})">Eliminar</button>` : ''}<button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Guardar</button></div></form>`);
+  $('#pmA').value = p.alcance; const sync = () => { $('#pmCat').classList.toggle('hidden', $('#pmA').value !== 'categoria'); $('#pmProd').classList.toggle('hidden', $('#pmA').value !== 'producto'); }; sync(); $('#pmA').onchange = sync;
+  $('#pmF').onsubmit = e => { e.preventDefault(); const b = formData(e.target); b.id = id || 0; run(async () => { await api('promocion_guardar', {method: 'POST', body: b}); closeAll(); toast('Promoción guardada'); v_promociones(); }, e.submitter); };
+}
+
+/* ================== CATEGORÍAS ================== */
+async function v_categorias() {
+  M().innerHTML = header('Categorías', 'Colecciones que aparecen en la tienda', `<button class="btn btn-gold" onclick="editCat()">+ Nueva categoría</button>`) + `<div class="card"><div class="tw" id="catT"><div class="empty">Cargando…</div></div></div>`;
+  const {categorias} = await api('categorias'); CACHE.cats = categorias;
+  $('#catT').innerHTML = `<table><thead><tr><th>Nombre</th><th>Subtítulo</th><th>Identificador</th><th class="num">Perfumes</th><th class="num">Orden</th><th>Estado</th></tr></thead><tbody>
+  ${categorias.map(c => `<tr class="click" onclick="editCat(${c.id})"><td>${esc(c.nombre)}</td><td>${esc(c.subtitulo || '')}</td><td><span class="mono">${esc(c.slug)}</span></td><td class="num">${c.productos}</td><td class="num">${c.orden}</td><td>${+c.activo ? '<span class="pill st-on">Visible</span>' : '<span class="pill st-off">Oculta</span>'}</td></tr>`).join('')}</tbody></table>`;
+}
+function editCat(id) {
+  const c = id ? CACHE.cats.find(x => +x.id === +id) : {activo: 1, orden: 0};
+  openModal(`${mHead(id ? 'Editar categoría' : 'Nueva categoría')}<form id="catF"><div class="mb">
+    <div class="fld"><label>Nombre *</label><input class="f" name="nombre" value="${esc(c.nombre || '')}" required></div>
+    <div class="fld"><label>Subtítulo</label><input class="f" name="subtitulo" value="${esc(c.subtitulo || '')}" placeholder="Para él"></div>
+    <div class="f2"><div class="fld"><label>Identificador</label><input class="f" name="slug" value="${esc(c.slug || '')}" placeholder="automático"></div>
+      <div class="fld"><label>Orden</label><input class="f" type="number" name="orden" value="${c.orden}"></div></div>
+    <label class="chk"><input type="checkbox" name="activo" ${+c.activo ? 'checked' : ''}> Visible</label>
+  </div><div class="mf">${id ? `<button type="button" class="btn btn-red" style="margin-right:auto" onclick="confirmBox('¿Eliminar la categoría? Sus perfumes quedarán sin categoría.',async()=>{await api('categoria_eliminar',{method:'POST',body:{id:${id}}});v_categorias()})">Eliminar</button>` : ''}<button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Guardar</button></div></form>`, true);
+  $('#catF').onsubmit = e => { e.preventDefault(); const b = formData(e.target); b.id = id || 0; run(async () => { await api('categoria_guardar', {method: 'POST', body: b}); closeAll(); toast('Categoría guardada'); v_categorias(); }, e.submitter); };
+}
+
+/* ================== AJUSTES ================== */
+async function v_ajustes() {
+  M().innerHTML = header('Ajustes de la tienda', 'Envíos, contacto, anuncios y métodos de pago') + '<div class="empty">Cargando…</div>';
+  const {ajustes: a} = await api('ajustes');
+  const arr = s => { try { return JSON.parse(s || '[]').join('\n'); } catch (e) { return ''; } };
+  M().innerHTML = header('Ajustes de la tienda', 'Envíos, contacto, anuncios y métodos de pago') + `<form id="ajSF" class="card pad" style="max-width:820px">
+    <div class="sec">General</div>
+    <div class="f2"><div class="fld"><label>Nombre de la tienda</label><input class="f" name="tienda_nombre" value="${esc(a.tienda_nombre || 'Luxara')}"></div>
+      <div class="fld"><label>WhatsApp de la tienda</label><input class="f" name="whatsapp" value="${esc(a.whatsapp || '')}" placeholder="50255551234"><span class="hint">Con código de país (502). Aquí llegan los pedidos que el cliente envía por WhatsApp.</span></div></div>
+    <div class="sec">Envíos</div>
+    <div class="f2"><div class="fld"><label>Envío gratis desde (Q)</label><input class="f" type="number" step="0.01" min="0" name="envio_gratis_desde" value="${esc(a.envio_gratis_desde || 0)}"><span class="hint">0 = nunca gratis automáticamente</span></div>
+      <div class="fld"><label>Costo de envío (Q)</label><input class="f" type="number" step="0.01" min="0" name="costo_envio" value="${esc(a.costo_envio || 0)}"><span class="hint">0 = envío siempre gratis</span></div></div>
+    <div class="sec">Barra de anuncios</div>
+    <div class="fld"><label>Un mensaje por línea (rotan arriba de la tienda)</label><textarea class="f" id="anun" rows="4">${esc(arr(a.anuncios))}</textarea></div>
+    <div class="sec">Pagos</div>
+    <div class="fld"><label>Métodos de pago (uno por línea)</label><textarea class="f" id="metp" rows="4">${esc(arr(a.metodos_pago))}</textarea></div>
+    <div class="fld"><label>Datos bancarios para transferencias</label><textarea class="f" name="datos_bancarios" rows="3" placeholder="Banco Industrial · Monetaria 000-000000-0 · A nombre de …">${esc(a.datos_bancarios || '')}</textarea><span class="hint">Para enviarlos al cliente cuando elija transferencia.</span></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn btn-gold">Guardar ajustes</button></div></form>`;
+  $('#ajSF').onsubmit = e => { e.preventDefault(); const b = formData(e.target);
+    b.anuncios = $('#anun').value.split('\n'); b.metodos_pago = $('#metp').value.split('\n');
+    run(async () => { await api('ajustes_guardar', {method: 'POST', body: b}); toast('Ajustes guardados'); }, e.submitter); };
+}
+
+/* ================== USUARIOS ================== */
+async function v_usuarios() {
+  M().innerHTML = header('Usuarios', 'Quién puede entrar al panel', `<button class="btn btn-gold" onclick="editUser()">+ Nuevo usuario</button>`) + `<div class="card"><div class="tw" id="uT"><div class="empty">Cargando…</div></div></div>`;
+  const {usuarios} = await api('usuarios'); CACHE.users = usuarios;
+  $('#uT').innerHTML = `<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Último acceso</th><th>Estado</th></tr></thead><tbody>
+  ${usuarios.map(u => `<tr class="click" onclick="editUser(${u.id})"><td>${esc(u.nombre)}</td><td>${esc(u.email)}</td><td>${u.rol === 'admin' ? 'Administrador' : 'Vendedor'}</td><td><small style="color:var(--mute)">${fdate(u.ultimo_acceso)}</small></td><td>${+u.activo ? '<span class="pill st-on">Activo</span>' : '<span class="pill st-off">Inactivo</span>'}</td></tr>`).join('')}</tbody></table>
+  <div class="pad" style="font-size:12.5px;color:var(--dim)"><b style="color:var(--mute)">Administrador:</b> acceso total. <b style="color:var(--mute)">Vendedor:</b> pedidos, perfumes, inventario, cupones y promociones (sin ajustes ni usuarios).</div>`;
+}
+function editUser(id) {
+  const u = id ? CACHE.users.find(x => +x.id === +id) : {rol: 'vendedor', activo: 1};
+  openModal(`${mHead(id ? 'Editar usuario' : 'Nuevo usuario')}<form id="uF"><div class="mb">
+    <div class="fld"><label>Nombre *</label><input class="f" name="nombre" value="${esc(u.nombre || '')}" required></div>
+    <div class="fld"><label>Correo *</label><input class="f" type="email" name="email" value="${esc(u.email || '')}" required></div>
+    <div class="fld"><label>${id ? 'Nueva contraseña (vacío = no cambiar)' : 'Contraseña *'}</label><input class="f" type="password" name="password" ${id ? '' : 'required'} minlength="8" autocomplete="new-password"></div>
+    <div class="fld"><label>Rol</label><select class="f" name="rol"><option value="vendedor" ${u.rol === 'vendedor' ? 'selected' : ''}>Vendedor</option><option value="admin" ${u.rol === 'admin' ? 'selected' : ''}>Administrador</option></select></div>
+    <label class="chk"><input type="checkbox" name="activo" ${+u.activo ? 'checked' : ''}> Activo</label>
+  </div><div class="mf"><button type="button" class="btn btn-line" onclick="closeAll()">Cancelar</button><button class="btn btn-gold">Guardar</button></div></form>`, true);
+  $('#uF').onsubmit = e => { e.preventDefault(); const b = formData(e.target); b.id = id || 0; run(async () => { await api('usuario_guardar', {method: 'POST', body: b}); closeAll(); toast('Usuario guardado'); v_usuarios(); }, e.submitter); };
+}
+
+boot();
+</script>
+</body>
+</html>
