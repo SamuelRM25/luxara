@@ -21,6 +21,12 @@ GitHub/luxara/
 
 Para Hostinger: sube todo **menos** `instalar.php` y `database/` (la base ya queda lista desde tu Mac porque es la misma de Clever Cloud).
 
+## Enlaces directos para anuncios
+Cada perfume tiene su propio enlace: `https://tudominio.com/p.php?s=SLUG` (ej. `p.php?s=lattafa-yara`).
+- Abre la tienda con ese perfume ya desplegado.
+- En WhatsApp/Facebook/Instagram muestra la foto, el nombre y el precio del perfume.
+- Cópialo desde el panel → Perfumes → botón **🔗 Enlace** (incluye versiones con `utm_source` para Instagram, Facebook y WhatsApp) o desde la tienda con “Copiar enlace de este perfume”.
+
 ## Credenciales (.env)
 `config/config.php` ya **no tiene contraseñas**: lee todo de variables de entorno.
 - **En tu Mac:** el archivo `.env` (en la raíz) tiene tus datos de Clever Cloud. Está en `.gitignore`, nunca se sube a GitHub. Plantilla: `.env.example`.

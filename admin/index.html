@@ -493,7 +493,7 @@ async function loadProductos() {
     <td>${esc(p.categoria || '—')}</td><td>${vs.map(v => `${esc(v.nombre)} · ${Q(v.precio)}${v.costo !== null ? ` <span class="margin">+${Q(v.precio - v.costo)}</span>` : ''}`).join('<br>') || '<small>Sin presentaciones</small>'}</td>
     <td class="num">${st <= 0 ? '<span class="pill st-out">Agotado</span>' : st}</td><td class="num">${p.ventas}</td>
     <td>${+p.activo ? '<span class="pill st-on">Visible</span>' : '<span class="pill st-off">Oculto</span>'} ${+p.nuevo ? '<span class="pill st-low">Nuevo</span>' : ''}</td>
-    <td class="num"><button class="btn btn-line btn-sm" onclick="event.stopPropagation();editProducto(${p.id})">Editar</button></td></tr>`; }).join('')}</tbody></table>`;
+    <td class="num" style="white-space:nowrap"><button class="btn btn-line btn-sm" title="Copiar enlace para anuncios" onclick="event.stopPropagation();copyLink('${p.slug}')">🔗 Enlace</button> <button class="btn btn-line btn-sm" onclick="event.stopPropagation();editProducto(${p.id})">Editar</button></td></tr>`; }).join('')}</tbody></table>`;
 }
 function varRow(v = {}) {
   return `<tr data-id="${v.id || ''}"><td><input class="f" data-k="nombre" value="${esc(v.nombre || '100 ml')}" placeholder="100 ml"></td>
@@ -546,6 +546,16 @@ async function editProducto(id) {
     body.variantes = [...$('#vRows').querySelectorAll('tr')].map(tr => { const o = {id: tr.dataset.id || 0}; tr.querySelectorAll('[data-k]').forEach(i => o[i.dataset.k] = i.value); return o; });
     run(async () => { await api('producto_guardar', {method: 'POST', body}); closeAll(); toast('Perfume guardado'); CACHE.prods = null; if (VIEW === 'productos') loadProductos(); else go(VIEW); }, e.submitter);
   };
+}
+function copyLink(slug, src) {
+  const u = new URL('../p.php', location.href); u.searchParams.set('s', slug);
+  const link = u.href;
+  openModal(`${mHead('Enlace del perfume')}<div class="mb">
+    <p style="color:var(--mute);font-size:13px;margin-bottom:14px">Usa este enlace en tus anuncios. Al compartirlo en WhatsApp o Facebook muestra la foto, el nombre y el precio, y abre la tienda directo en este perfume.</p>
+    ${['', 'instagram', 'facebook', 'whatsapp'].map(s => { const l = s ? link + '&utm_source=' + s + '&utm_medium=social' : link;
+      return `<div class="fld"><label>${s ? 'Para ' + s.charAt(0).toUpperCase() + s.slice(1) : 'Enlace general'}</label><div style="display:flex;gap:8px"><input class="f" readonly value="${esc(l)}" onclick="this.select()"><button class="btn btn-line btn-sm" onclick="navigator.clipboard.writeText('${esc(l)}').then(()=>toast('Enlace copiado'))">Copiar</button></div></div>`; }).join('')}
+    <p style="color:var(--dim);font-size:12px">Las versiones con <b>utm_source</b> te permiten saber después de qué red llegó cada visita (Google Analytics / Meta).</p>
+  </div>`, true);
 }
 function delProducto(id) { confirmBox('¿Eliminar este perfume? Si ya tiene ventas, solo se ocultará de la tienda para conservar el historial.', async () => { const r = await api('producto_eliminar', {method: 'POST', body: {id}}); toast(r.mensaje); loadProductos(); }); }
 
@@ -643,12 +653,12 @@ async function v_cupones() {
   const {cupones} = await api('cupones'); CACHE.cupones = cupones;
   const now = Date.now();
   $('#cTable').innerHTML = !cupones.length ? '<div class="empty">No hay cupones todavía</div>' : `<table><thead><tr><th>Código</th><th>Descuento</th><th>Condiciones</th><th>Usos</th><th>Vigencia</th><th>Estado</th></tr></thead><tbody>
-  ${cupones.map(c => { const venc = c.vence && new Date(c.vence.replace(' ', 'T')) < now, agot = c.usos_max && +c.usos >= +c.usos_max;
+  ${cupones.map(c => { const venc = c.vence && new Date(c.vence.replace(' ', 'T')) < now, agot = c.usos_max && +c.usos >= +c.usos_max, prog = c.inicia && new Date(c.inicia.replace(' ', 'T')) > now;
     return `<tr class="click" onclick="editCupon(${c.id})"><td><span class="mono" style="font-size:14px">${esc(c.codigo)}</span><small>${esc(c.descripcion || '')}</small></td>
     <td>${c.tipo === 'porcentaje' ? (+c.valor) + '%' : c.tipo === 'monto' ? Q(c.valor) : 'Envío gratis'}</td>
     <td>${+c.minimo ? 'Compra mín. ' + Q(c.minimo) : '<small>Sin mínimo</small>'}</td><td>${c.usos}${c.usos_max ? ' / ' + c.usos_max : ''}</td>
     <td><small style="color:var(--mute)">${c.inicia ? 'Desde ' + fdate(c.inicia, false) : 'Inmediato'}<br>${c.vence ? 'Hasta ' + fdate(c.vence, false) : 'Sin vencimiento'}</small></td>
-    <td>${!+c.activo ? '<span class="pill st-off">Inactivo</span>' : venc ? '<span class="pill st-out">Vencido</span>' : agot ? '<span class="pill st-low">Agotado</span>' : '<span class="pill st-on">Activo</span>'}</td></tr>`; }).join('')}</tbody></table>`;
+    <td>${!+c.activo ? '<span class="pill st-off">Inactivo</span>' : venc ? '<span class="pill st-out">Vencido</span>' : agot ? '<span class="pill st-low">Agotado</span>' : prog ? '<span class="pill st-low">Programado</span>' : '<span class="pill st-on">Activo</span>'}</td></tr>`; }).join('')}</tbody></table>`;
 }
 function editCupon(id) {
   const c = id ? CACHE.cupones.find(x => +x.id === +id) : {tipo: 'porcentaje', activo: 1, minimo: 0};
