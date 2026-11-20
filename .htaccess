@@ -1,34 +1,44 @@
 # ===== LUXARA =====
+# Todas las directivas van dentro de <IfModule> para que funcione igual
+# en tu Mac (Apache local) y en Hostinger (LiteSpeed) sin errores 500.
 Options -Indexes
 DirectoryIndex index.html index.php
 
-# Forzar HTTPS (activa cuando tengas SSL en Hostinger)
-RewriteEngine On
-RewriteCond %{HTTPS} off
-RewriteCond %{HTTP:X-Forwarded-Proto} !https
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Forzar HTTPS solo en el dominio real (no en localhost ni en tu red local)
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|192\.168\.|10\.|.*\.local)
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
 
-# Bloquear archivos sensibles
+# Bloquear archivos sensibles (.sql, .md, logs…)
 <FilesMatch "\.(sql|md|log|env|ini|bak)$">
-  Require all denied
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
 </FilesMatch>
 
-# Cabeceras de seguridad
+# El instalador solo responde desde la misma computadora
+<Files "instalar.php">
+  <IfModule mod_authz_core.c>
+    Require local
+  </IfModule>
+</Files>
+
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# Caché de imágenes
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresByType image/webp "access plus 30 days"
   ExpiresByType image/jpeg "access plus 30 days"
   ExpiresByType image/png "access plus 30 days"
 </IfModule>
-
-# El instalador solo se usa en local
-<Files "instalar.php">
-  Require all denied
-</Files>

@@ -1,6 +1,16 @@
 # Solo imágenes: nunca ejecutar scripts aquí
 Options -Indexes
 <FilesMatch "\.(php|phtml|phar|pl|py|cgi|sh|html?)$">
-  Require all denied
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
 </FilesMatch>
-php_flag engine off
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
